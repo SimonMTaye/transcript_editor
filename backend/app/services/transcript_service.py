@@ -5,7 +5,7 @@ import io
 from typing import List, Optional, Literal
 from datetime import datetime, timezone
 from fastapi import UploadFile, HTTPException
-from ..models.transcript import Transcript
+from ..models.transcript import Transcript, TranscriptSummary
 from .llm_service import llm_service
 from .whisper_service import transcribe_service  # Import the new WhisperService
 from .utils import segments_to_transcript, generate_hash
@@ -140,7 +140,7 @@ class TranscriptService:
             "Export to Word functionality is not implemented yet."
         )
 
-    async def get_all_transcripts(self) -> List[Transcript]:
+    async def get_recent_transcripts(self) -> List[TranscriptSummary]:
         """
         Retrieve all transcripts from the database.
         """

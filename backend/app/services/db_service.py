@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from ..models.transcript import Transcript
+from ..models.transcript import Transcript, TranscriptSummary
 from ..models.database import TranscriptDB, get_db
 from .utils import transcript_to_segments, generate_hash
 
@@ -26,7 +26,7 @@ class DBService:
         # Consider using Depends(get_db) in endpoint functions instead of storing db instance
         # This ensures session lifecycle is managed per request
         self.db_gen = get_db()
-        self.db = next(self.db_gen)
+        self.db: Session = next(self.db_gen)
 
     def _get_db(self) -> Session:
         # Helper to get a fresh session if needed, though Depends is preferred
@@ -37,12 +37,12 @@ class DBService:
             return next(self.db_gen)
 
     # Convert DB model to Pydantic model
-    def _map_db_to_model(self, db_transcript: TranscriptDB) -> Transcript:
+    def _map_transcriptdb_to_transcript(
+        self, db_transcript: TranscriptDB
+    ) -> Transcript:
         return Transcript(
             id=db_transcript.id,
             title=db_transcript.title,
-            content=db_transcript.content,
-            status=db_transcript.status,
             audio_path=db_transcript.audio_path,
             segments=transcript_to_segments(db_transcript.content),
             unedited_id=db_transcript.unedited_id,
@@ -60,7 +60,7 @@ class DBService:
         """
         # Create new transcript with updated content and timestamps
 
-        transcript_model = self._map_db_to_model(transcript)
+        transcript_model = self._map_transcriptdb_to_transcript(transcript)
         db = self._get_db()
         db.add(transcript_model)
         db.commit()
@@ -92,15 +92,24 @@ class DBService:
         db.refresh(new_transcript)
         return new_transcript
 
-    async def get_recent_transcripts(self) -> List[Transcript]:
+    async def get_recent_transcripts(self) -> List[TranscriptSummary]:
         """
-        Retrieve recent transcripts from the database and map them to Pydantic models.
+        Retrieve recent transcripts with only id, title and updated_at from the database.
+        Returns a list of lightweight TranscriptSummary models.
         """
+
         db = self._get_db()
         db_transcripts = (
-            db.query(TranscriptDB).order_by(TranscriptDB.updated_at.desc()).all()
+            db.query(TranscriptDB.id, TranscriptDB.title, TranscriptDB.updated_at)
+            .order_by(TranscriptDB.updated_at.desc())
+            .limit(10)
+            .all()
         )
-        return [self._map_db_to_model(t) for t in db_transcripts]
+
+        return [
+            TranscriptSummary(id=t.id, title=t.title, updated_at=t.updated_at)
+            for t in db_transcripts
+        ]
 
     async def get_transcript(self, transcript_id: str) -> Optional[Transcript]:
         """
@@ -114,7 +123,7 @@ class DBService:
         )
         if not db_transcript:
             return None
-        return self._map_db_to_model(db_transcript)
+        return self._map_transcriptdb_to_transcript(db_transcript)
 
 
 db_service = DBService()

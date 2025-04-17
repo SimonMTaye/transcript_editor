@@ -1,19 +1,17 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from typing import List
-from ..models.transcript import (
-    Transcript,
-)
+from ..models.transcript import Transcript, TranscriptSummary
 from ..services.transcript_service import transcript_service
 
 router = APIRouter()
 
 
 # Endpoint to list all transcripts (summaries would be better, but returning full for now)
-@router.get("/", response_model=List[Transcript])
+@router.get("/", response_model=List[TranscriptSummary])
 async def list_transcripts():
     # In a real app, you might want pagination and summary models here
-    return await transcript_service.get_all_transcripts()
+    return await transcript_service.get_recent_transcripts()
 
 
 # Endpoint to handle file uploads

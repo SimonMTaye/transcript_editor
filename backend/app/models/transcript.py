@@ -45,5 +45,20 @@ class Transcript(BaseModel):
     updated_at: datetime
 
 
+class TranscriptSummary(BaseModel):
+    """
+    Transcript summary model representing a transcript with its title and last updated timestamp.
+
+    Attributes:
+        id (str): Unique identifier for the transcript.
+        title (str): Title of the transcript.
+        updated_at (datetime): Timestamp when the transcript was last updated.
+    """
+
+    id: str  # Changed from int to string for content-based hash
+    title: str
+    updated_at: datetime
+
+
 class Config:
     from_attributes = True
