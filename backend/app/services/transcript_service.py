@@ -4,7 +4,7 @@ import shutil
 import io
 from typing import List, Optional, Literal
 from datetime import datetime, timezone
-from fastapi import UploadFile, HTTPException
+from fastapi import UploadFile
 from ..models.transcript import Transcript, TranscriptSummary
 from .llm_service import llm_service
 from .whisper_service import transcribe_service  # Import the new WhisperService
@@ -90,18 +90,6 @@ class TranscriptService:
         # TEMP
         print("DEBUG: Saving Transcript to DB...")
         db_service.save_new_transcript(transcript)
-
-        print(
-            f"DEBUG: Automatically performing edit to audio transcript ID={transcript.id}"
-        )
-        # Apply light edit
-        refined = await self.perform_llm_action(transcript.id, "refine")
-        if refined is None:
-            print(f"DEBUG: Failed refined edit for audio transcript ID={transcript.id}")
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to perform light edit on the transcript.",
-            )
         return True
 
     async def perform_llm_action(
