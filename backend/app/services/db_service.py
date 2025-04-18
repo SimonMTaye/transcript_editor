@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from ..models.transcript import Transcript, TranscriptSummary
-from ..models.database import TranscriptDB, get_db
+from ..models.database import TranscriptDB, TranscriptSummaryDB, get_db
 from .utils import transcript_to_segments, generate_hash, segments_to_transcript
 
 
@@ -39,14 +39,14 @@ class DBService:
     # Convert DB model to Pydantic model
     def _transcriptdb_to_transcript(self, db_transcript: TranscriptDB) -> Transcript:
         return Transcript(
-            id=db_transcript.id,
-            title=db_transcript.title,
-            audio_path=db_transcript.audio_path,
-            segments=transcript_to_segments(db_transcript.content),
-            unedited_id=db_transcript.unedited_id,
-            previous_id=db_transcript.previous_id,
-            created_at=db_transcript.created_at,
-            updated_at=db_transcript.updated_at,
+            id=str(db_transcript.id),
+            title=str(db_transcript.title),
+            audio_path=str(db_transcript.audio_path),
+            segments=transcript_to_segments(str(db_transcript.content)),
+            unedited_id=str(db_transcript.unedited_id),
+            previous_id=str(db_transcript.previous_id),
+            created_at=datetime.fromisoformat(str(db_transcript.created_at)),
+            updated_at=datetime.fromisoformat(str(db_transcript.updated_at)),
         )
 
     def _transcript_to_transcriptdb(self, transcript: Transcript) -> TranscriptDB:
@@ -61,6 +61,25 @@ class DBService:
             updated_at=transcript.updated_at,
         )
 
+    def _transcript_to_transcript_summarydb(
+        self, transcript: Transcript
+    ) -> TranscriptSummaryDB:
+        return TranscriptSummaryDB(
+            id=transcript.id,
+            title=transcript.title,
+            unedited_id=transcript.unedited_id,
+            updated_at=transcript.updated_at,
+        )
+
+    def _transcriptdb_to_transcript_summary(
+        self, transcript: TranscriptDB | TranscriptSummaryDB
+    ) -> TranscriptSummary:
+        return TranscriptSummary(
+            id=str(transcript.id),
+            title=str(transcript.title),
+            updated_at=datetime.fromisoformat(str(transcript.updated_at)),
+        )
+
     async def save_new_transcript(self, transcript: Transcript):
         """
         Save a transcript to the database
@@ -71,10 +90,13 @@ class DBService:
         # Create new transcript with updated content and timestamps
 
         transcript_model = self._transcript_to_transcriptdb(transcript)
+        transcript_summary_model = self._transcript_to_transcript_summarydb(transcript)
         db = self._get_db()
         db.add(transcript_model)
+        db.add(transcript_summary_model)
         db.commit()
         db.refresh(transcript_model)
+        return self._transcriptdb_to_transcript(transcript_model)
 
     async def update_transcript(self, transcript: Transcript, new_content: str):
         """
@@ -96,11 +118,19 @@ class DBService:
             created_at=transcript.created_at,
             updated_at=datetime.now(timezone.utc),
         )
+        new_transcript_summary_model = self._transcript_to_transcript_summarydb(
+            new_transcript
+        )
         db = self._get_db()
         db.add(new_transcript)
+        # Before update, make sure to find and remove a transcript that has the same unedited_id
+        db.query(TranscriptSummaryDB).filter(
+            TranscriptSummaryDB.unedited_id == transcript.unedited_id
+        ).delete()
+        db.add(new_transcript_summary_model)
         db.commit()
         db.refresh(new_transcript)
-        return new_transcript
+        return self._transcriptdb_to_transcript(new_transcript)
 
     async def get_recent_transcripts(self) -> List[TranscriptSummary]:
         """
@@ -110,16 +140,13 @@ class DBService:
 
         db = self._get_db()
         db_transcripts = (
-            db.query(TranscriptDB.id, TranscriptDB.title, TranscriptDB.updated_at)
-            .order_by(TranscriptDB.updated_at.desc())
+            db.query(TranscriptSummaryDB)
+            .order_by(TranscriptSummaryDB.updated_at.desc())
             .limit(10)
             .all()
         )
 
-        return [
-            TranscriptSummary(id=t.id, title=t.title, updated_at=t.updated_at)
-            for t in db_transcripts
-        ]
+        return [self._transcriptdb_to_transcript_summary(t) for t in db_transcripts]
 
     async def get_transcript(self, transcript_id: str) -> Optional[Transcript]:
         """

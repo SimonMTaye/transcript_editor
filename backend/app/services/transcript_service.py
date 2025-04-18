@@ -29,6 +29,9 @@ class TranscriptService:
     """
 
     async def _save_file(self, file: UploadFile):
+        if not file or not file.filename:
+            logger.error("No file provided for upload.")
+            raise ValueError("No file provided for upload.")
         _, file_extension = os.path.splitext(file.filename)
         unique_filename = f"{uuid.uuid4()}{file_extension}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
@@ -53,6 +56,9 @@ class TranscriptService:
         audio_path_for_db = path
         logger.debug("Calling transcribe service...")
         _, segments = await whisper_service.transcribe(path)
+        if not segments:
+            logger.error("Transcription failed or no segments returned.")
+            raise ValueError("Transcription failed or no segments returned.")
         logger.debug("Received transcription - Segments type: %s", type(segments))
         t_hash = generate_hash(segments_to_transcript(segments))
 
@@ -82,7 +88,7 @@ class TranscriptService:
             HTTPException: If there is an error during processing.
         """
         logger.debug("Processing file type: %s", file.content_type)
-        if file.content_type.startswith("audio/"):
+        if file.content_type and file.content_type.startswith("audio/"):
             transcript = await self.handle_audio_upload(title, file)
         else:
             logger.error("Unsupported file type: %s", file.content_type)
@@ -107,14 +113,14 @@ class TranscriptService:
         transcript = await db_service.get_transcript(transcript_id)
         if not transcript:
             return None
-        if not transcript.content:
+        if not transcript.segments:
             return transcript
 
         if action == "refine":
             # Pass timestamps to the LLM service if available
             result = await llm_service.refine(transcript.segments)
             content = segments_to_transcript(result)
-            return db_service.update_transcript(transcript, content)
+            return await db_service.update_transcript(transcript, content)
         raise ValueError("Unknown action type")
 
     async def export_to_word(self, transcript_id: str) -> io.BytesIO:

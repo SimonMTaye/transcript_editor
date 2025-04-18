@@ -1,9 +1,22 @@
 import os
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, TypedDict, cast
 from fastapi import HTTPException
 from openai import OpenAI, OpenAIError
 from ..core.config import settings
 from ..models.transcript import TranscriptSegment
+
+
+# Define a type for the segment structure
+class WhisperSegment(TypedDict):
+    start: float
+    end: float
+    text: str
+
+
+# Add this type definition near your other type definitions
+class WhisperVerboseResponse:
+    text: str
+    segments: List[WhisperSegment]
 
 
 class WhisperService:
@@ -47,10 +60,11 @@ class WhisperService:
                 )
             print("Transcription received from OpenAI.")
 
+            transcript_response = cast(WhisperVerboseResponse, transcript_response)
             # Extract full text and segments
             full_text = transcript_response.text
             # Convert the segments from the response in transcript_response.segments to a list of TranscriptSegment objects
-            print(transcript_response.segments)
+            # assert that segments has the type we expect: a list of dicts with start, end, text
             segments = [
                 TranscriptSegment(
                     start=segment["start"],

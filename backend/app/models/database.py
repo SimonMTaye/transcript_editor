@@ -8,8 +8,12 @@ Base = declarative_base()
 
 
 class TranscriptDB(Base):
-    __tablename__ = "transcripts"
+    """
+    Database model for storing transcripts data.
+    Stores all edits to a transcript in a single table allowing for undos.
+    """
 
+    __tablename__ = "transcripts"
     id = Column(String, primary_key=True, index=True)
     title = Column(String, index=True)
     content = Column(String)
@@ -17,6 +21,24 @@ class TranscriptDB(Base):
     unedited_id = Column(String, nullable=False)  # ID of the initial transcript
     previous_id = Column(String, nullable=False)  # ID of the previous version
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+    )
+
+
+class TranscriptSummaryDB(Base):
+    """
+    Summary of transcripts to store a list of transcripts being worked.
+    Each summary represents a single unique transcript identified by unedited_id.
+    id identifies the most recently edited version of the transcript.
+    """
+
+    __tablename__ = "transcript_summaries"
+    id = Column(String, primary_key=True, index=True)
+    title = Column(String, index=True)
+    unedited_id = Column(String, nullable=False)  # ID of the initial transcript
     updated_at = Column(
         DateTime,
         default=datetime.now(timezone.utc),

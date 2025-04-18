@@ -24,16 +24,16 @@ async def upload_transcript_file(title: str = Form(...), file: UploadFile = File
     # This might involve saving the file, queuing transcription, etc.
     # For now, assume service handles it and returns a Transcript object
     try:
-        logger.info(f"Uploading file: {file.filename} with title: {title}")
+        logger.info("Uploading file: %s  with title: %s", file.filename, title)
         # You'll need to implement `create_transcript_from_upload` in your service
         transcript = await transcript_service.create_transcript_from_upload(
             title=title, file=file
         )
-        logger.info(f"Successfully processed upload: {transcript.id}")
+        logger.info("Successfully processed upload: %s", transcript.id)
         return transcript
     except Exception as e:
         # Log the exception e
-        logger.error(f"Error processing upload: {str(e)}", exc_info=True)
+        logger.error("Error processing upload: %s", e, exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Failed to process uploaded file: {e}"
         ) from e
