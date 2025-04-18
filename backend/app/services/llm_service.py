@@ -1,4 +1,5 @@
 import google.generativeai as genai
+from google.generativeai import GenerationConfig
 from ..core.config import settings
 from typing import List
 from ..models.transcript import TranscriptSegment
@@ -11,7 +12,7 @@ class LLMService:
         self.model = genai.GenerativeModel("gemini-2.0-flash-lite")
         self.heavy_model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
 
-    async def _call_heavy_model(
+    async def _call_model(
         self, action_promot: str, timestamps: List[TranscriptSegment]
     ) -> List[TranscriptSegment]:
         segments_text = []
@@ -21,22 +22,27 @@ class LLMService:
             )
         timestamped_transcript = "\n".join(segments_text)
         prompt = f"{action_promot}\n\n {timestamped_transcript}"
-        response = await self.heavy_model.generate_content_async(prompt)
+        response = await self.heavy_model.generate_content_async(
+            prompt, generation_config=GenerationConfig(temperature=1)
+        )
         # Parse the response back into TimestampSegment objects
         if response.text:
             return transcript_to_segments(response.text)
+        # Raise correct error if LLM did not respond correctly
+        raise ValueError("LLM response is empty")
 
     async def refine(
         self,
-        timestamps: List[TranscriptSegment] = None,
+        timestamps: List[TranscriptSegment],
     ) -> List[TranscriptSegment]:
         action_prompt = """
             Please refine this interview transcript to improve readability. 
+            Remove speech artifacts (ums, ahs, repeated words), fix obvious grammatical errors and delete pleasantries with no other content.
             Remove redundant content, ensure natural flow, shorten where appropriate and remove unnecessary connective words.
             Make sure the sentences are clear and concise and have a good flow.
-            Remove speech artifacts (ums, ahs, repeated words), fix obvious grammatical errors and delete pleasantries with no other content.
             Maintain all important information and context.
-            Try to maintain the speaker's word choices and sequence of responses when possible
+            Maintain the speaker's word choices as often as possible. Only change the wording if it original phrasing is grammatically incorrect and in those cases, 
+            pick words that are correct while being as close to the original intention as possible.
             
             IMPORTANT: You must include timestamps in your refined output.
             
@@ -52,7 +58,7 @@ class LLMService:
             ---------------------------------
             Transcript:
             """
-        return await self._call_heavy_model(action_prompt, timestamps)
+        return await self._call_model(action_prompt, timestamps)
 
 
 llm_service = LLMService()
