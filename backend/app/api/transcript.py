@@ -1,16 +1,19 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from typing import List
+import logging
 from ..models.transcript import Transcript, TranscriptSummary
 from ..services.transcript_service import transcript_service
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 # Endpoint to list all transcripts (summaries would be better, but returning full for now)
-@router.get("/", response_model=List[TranscriptSummary])
+@router.get("/recent", response_model=List[TranscriptSummary])
 async def list_transcripts():
     # In a real app, you might want pagination and summary models here
+    logger.info("Fetching recent transcripts")
     return await transcript_service.get_recent_transcripts()
 
 
@@ -21,19 +24,22 @@ async def upload_transcript_file(title: str = Form(...), file: UploadFile = File
     # This might involve saving the file, queuing transcription, etc.
     # For now, assume service handles it and returns a Transcript object
     try:
+        logger.info(f"Uploading file: {file.filename} with title: {title}")
         # You'll need to implement `create_transcript_from_upload` in your service
         transcript = await transcript_service.create_transcript_from_upload(
             title=title, file=file
         )
+        logger.info(f"Successfully processed upload: {transcript.id}")
         return transcript
     except Exception as e:
         # Log the exception e
+        logger.error(f"Error processing upload: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"Failed to process uploaded file: {e}"
         ) from e
 
 
-@router.get("/{transcript_id}", response_model=Transcript)
+@router.get("/fetch/{transcript_id}", response_model=Transcript)
 async def get_transcript(transcript_id: str):  # Changed from int to str
     transcript = await transcript_service.get_transcript(transcript_id)
     if not transcript:
@@ -46,7 +52,7 @@ async def update_transcript():
     raise NotImplementedError("Update endpoint not implemented yet")
 
 
-@router.post("/{transcript_id}/refine", response_model=Transcript)
+@router.post("/refine/{transcript_id}", response_model=Transcript)
 async def refine_transcript(transcript_id: str):  # Changed from int to str
     """
     Refine the transcript using LLM service.
@@ -58,7 +64,7 @@ async def refine_transcript(transcript_id: str):  # Changed from int to str
 
 
 # Endpoint to export transcript to Word document
-@router.get("/{transcript_id}/export", response_class=StreamingResponse)
+@router.get("/export/{transcript_id}", response_class=StreamingResponse)
 async def export_transcript_to_word(transcript_id: str):  # Changed from int to str
     try:
         file_stream = await transcript_service.export_to_word(transcript_id)

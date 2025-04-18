@@ -2,14 +2,18 @@ import os
 import uuid
 import shutil
 import io
+import logging
 from typing import List, Optional, Literal
 from datetime import datetime, timezone
 from fastapi import UploadFile
 from ..models.transcript import Transcript, TranscriptSummary
 from .llm_service import llm_service
-from .whisper_service import transcribe_service  # Import the new WhisperService
+from .whisper_service import whisper_service  # Import the new WhisperService
 from .utils import segments_to_transcript, generate_hash
 from .db_service import db_service
+
+# Set up logger for this module
+logger = logging.getLogger(__name__)
 
 # Define a directory to store uploads relative to the backend root
 UPLOAD_DIR = os.path.abspath(
@@ -24,12 +28,6 @@ class TranscriptService:
 
     """
 
-    async def _transcribe(
-        self, audio_file_path: str
-    ) -> tuple[Optional[str], Optional[List[dict]]]:
-        """Helper function to transcribe audio using WhisperService."""
-        return await transcribe_service.transcribe(audio_file_path)
-
     async def _save_file(self, file: UploadFile):
         _, file_extension = os.path.splitext(file.filename)
         unique_filename = f"{uuid.uuid4()}{file_extension}"
@@ -37,8 +35,9 @@ class TranscriptService:
         try:
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            print(f"DEBUG: File saved to {file_path}")
+            logger.debug("File saved to %s", {file_path})
         except Exception as e:
+            logger.error("Could not save uploaded file: %s", e)
             raise IOError(f"Could not save uploaded file: {e}") from e
         finally:
             file.file.close()
@@ -49,12 +48,12 @@ class TranscriptService:
         Handle audio file upload and transcription.
         This function is a placeholder and should be replaced with actual implementation.
         """
-        print("DEBUG: Handling audio file.")
+        logger.debug("Handling audio file.")
         path = await self._save_file(file)
         audio_path_for_db = path
-        print("DEBUG: Calling _transcribe_audio_openai...")
-        _, segments = await self._transcribe(path)
-        print(f"DEBUG: Received from OpenAI - Segments type: {type(segments)}")
+        logger.debug("Calling transcribe service...")
+        _, segments = await whisper_service.transcribe(path)
+        logger.debug("Received transcription - Segments type: %s", type(segments))
         t_hash = generate_hash(segments_to_transcript(segments))
 
         return Transcript(
@@ -62,8 +61,8 @@ class TranscriptService:
             title=title,
             audio_path=audio_path_for_db,
             segments=segments,
-            unedited_id=hash,
-            previous_id=hash,
+            unedited_id=t_hash,
+            previous_id=t_hash,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
@@ -82,15 +81,16 @@ class TranscriptService:
         Raises:
             HTTPException: If there is an error during processing.
         """
-        print(f"DEBUG: Processing file type: {file.content_type}")
+        logger.debug("Processing file type: %s", file.content_type)
         if file.content_type.startswith("audio/"):
             transcript = await self.handle_audio_upload(title, file)
         else:
+            logger.error("Unsupported file type: %s", file.content_type)
             raise ValueError("Only audio files are supported for transcription.")
-        # TEMP
-        print("DEBUG: Saving Transcript to DB...")
-        db_service.save_new_transcript(transcript)
-        return True
+
+        logger.debug("Saving Transcript to DB...")
+        await db_service.save_new_transcript(transcript)
+        return transcript
 
     async def perform_llm_action(
         self,
@@ -133,6 +133,14 @@ class TranscriptService:
         Retrieve all transcripts from the database.
         """
         return await db_service.get_recent_transcripts()
+
+    async def get_transcript(self, transcript_id: str) -> Optional[Transcript]:
+        """
+        Retrieve a transcript by its ID.
+        Args:
+            transcript_id (str): ID of the transcript to be retrieved.
+        """
+        return await db_service.get_transcript(transcript_id)
 
 
 transcript_service = TranscriptService()

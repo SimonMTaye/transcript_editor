@@ -3,7 +3,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from ..models.transcript import Transcript, TranscriptSummary
 from ..models.database import TranscriptDB, get_db
-from .utils import transcript_to_segments, generate_hash
+from .utils import transcript_to_segments, generate_hash, segments_to_transcript
 
 
 class DBService:
@@ -37,9 +37,7 @@ class DBService:
             return next(self.db_gen)
 
     # Convert DB model to Pydantic model
-    def _map_transcriptdb_to_transcript(
-        self, db_transcript: TranscriptDB
-    ) -> Transcript:
+    def _transcriptdb_to_transcript(self, db_transcript: TranscriptDB) -> Transcript:
         return Transcript(
             id=db_transcript.id,
             title=db_transcript.title,
@@ -51,6 +49,18 @@ class DBService:
             updated_at=db_transcript.updated_at,
         )
 
+    def _transcript_to_transcriptdb(self, transcript: Transcript) -> TranscriptDB:
+        return TranscriptDB(
+            id=transcript.id,
+            title=transcript.title,
+            audio_path=transcript.audio_path,
+            content=segments_to_transcript(transcript.segments),
+            unedited_id=transcript.unedited_id,
+            previous_id=transcript.previous_id,
+            created_at=transcript.created_at,
+            updated_at=transcript.updated_at,
+        )
+
     async def save_new_transcript(self, transcript: Transcript):
         """
         Save a transcript to the database
@@ -60,7 +70,7 @@ class DBService:
         """
         # Create new transcript with updated content and timestamps
 
-        transcript_model = self._map_transcriptdb_to_transcript(transcript)
+        transcript_model = self._transcript_to_transcriptdb(transcript)
         db = self._get_db()
         db.add(transcript_model)
         db.commit()
@@ -123,7 +133,7 @@ class DBService:
         )
         if not db_transcript:
             return None
-        return self._map_transcriptdb_to_transcript(db_transcript)
+        return self._transcriptdb_to_transcript(db_transcript)
 
 
 db_service = DBService()

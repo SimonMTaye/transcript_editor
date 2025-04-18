@@ -49,9 +49,17 @@ class WhisperService:
 
             # Extract full text and segments
             full_text = transcript_response.text
-            segments = (
-                transcript_response.segments
-            )  # List of dicts with start, end, text, etc.
+            # Convert the segments from the response in transcript_response.segments to a list of TranscriptSegment objects
+            print(transcript_response.segments)
+            segments = [
+                TranscriptSegment(
+                    start=segment["start"],
+                    end=segment["end"],
+                    text=segment["text"],
+                    id=i,
+                )
+                for i, segment in enumerate(transcript_response.segments)
+            ]
 
             return full_text, segments
 
@@ -66,4 +74,4 @@ class WhisperService:
 
 
 # Create a singleton instance
-transcribe_service = WhisperService()
+whisper_service = WhisperService()
