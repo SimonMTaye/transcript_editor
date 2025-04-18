@@ -1,9 +1,9 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from ..models.transcript import Transcript, TranscriptSummary
 from ..models.database import TranscriptDB, TranscriptSummaryDB, get_db
-from .utils import transcript_to_segments, generate_hash, segments_to_transcript
+from .utils import transcript_to_segments, segments_to_transcript
 
 
 class DBService:
@@ -80,9 +80,9 @@ class DBService:
             updated_at=datetime.fromisoformat(str(transcript.updated_at)),
         )
 
-    async def save_new_transcript(self, transcript: Transcript):
+    async def save_transcript(self, transcript: Transcript):
         """
-        Save a transcript to the database
+        Save a transcript to the database;
         Args:
             transcript (Transcript): The original transcript to update.
             new_content (str): The new content to update the transcript with.
@@ -92,45 +92,14 @@ class DBService:
         transcript_model = self._transcript_to_transcriptdb(transcript)
         transcript_summary_model = self._transcript_to_transcript_summarydb(transcript)
         db = self._get_db()
+        db.query(TranscriptSummaryDB).filter(
+            TranscriptSummaryDB.unedited_id == transcript.unedited_id
+        ).delete()
         db.add(transcript_model)
         db.add(transcript_summary_model)
         db.commit()
         db.refresh(transcript_model)
         return self._transcriptdb_to_transcript(transcript_model)
-
-    async def update_transcript(self, transcript: Transcript, new_content: str):
-        """
-        Update a pre-existing transcript with new content.
-        Args:
-            transcript (Transcript): The original transcript to update.
-            new_content (str): The new content to update the transcript with.
-        """
-        # Generate a new hash for the updated content
-        new_hash = generate_hash(new_content)
-        # Create new transcript with updated content and timestamps
-        new_transcript = TranscriptDB(
-            id=new_hash,
-            title=transcript.title,
-            content=new_content,
-            audio_path=transcript.audio_path,
-            unedited_id=transcript.unedited_id,
-            previous_id=transcript.id,
-            created_at=transcript.created_at,
-            updated_at=datetime.now(timezone.utc),
-        )
-        new_transcript_summary_model = self._transcript_to_transcript_summarydb(
-            new_transcript
-        )
-        db = self._get_db()
-        db.add(new_transcript)
-        # Before update, make sure to find and remove a transcript that has the same unedited_id
-        db.query(TranscriptSummaryDB).filter(
-            TranscriptSummaryDB.unedited_id == transcript.unedited_id
-        ).delete()
-        db.add(new_transcript_summary_model)
-        db.commit()
-        db.refresh(new_transcript)
-        return self._transcriptdb_to_transcript(new_transcript)
 
     async def get_recent_transcripts(self) -> List[TranscriptSummary]:
         """

@@ -9,7 +9,7 @@ class ExportService:
         self.export_dir = "exports"
         os.makedirs(self.export_dir, exist_ok=True)
 
-    def export_to_word(self, transcript: Dict, timestamps: List[Dict] = None) -> str:
+    def export_to_word(self, transcript: Dict, timestamps: List[Dict]) -> str:
         """Export transcript to Word document with optional timestamps"""
         doc = Document()
 

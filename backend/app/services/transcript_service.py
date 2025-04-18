@@ -4,7 +4,7 @@ import shutil
 import io
 import logging
 from typing import List, Optional, Literal
-from datetime import datetime, timezone
+from datetime import datetime
 from fastapi import UploadFile
 from ..models.transcript import Transcript, TranscriptSummary
 from .llm_service import llm_service
@@ -60,7 +60,7 @@ class TranscriptService:
             logger.error("Transcription failed or no segments returned.")
             raise ValueError("Transcription failed or no segments returned.")
         logger.debug("Received transcription - Segments type: %s", type(segments))
-        t_hash = generate_hash(segments_to_transcript(segments))
+        t_hash = generate_hash(f"{segments_to_transcript(segments)}-{title}")
 
         return Transcript(
             id=t_hash,
@@ -69,8 +69,8 @@ class TranscriptService:
             segments=segments,
             unedited_id=t_hash,
             previous_id=t_hash,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
         )
 
     async def create_transcript_from_upload(
@@ -95,7 +95,7 @@ class TranscriptService:
             raise ValueError("Only audio files are supported for transcription.")
 
         logger.debug("Saving Transcript to DB...")
-        await db_service.save_new_transcript(transcript)
+        await db_service.save_transcript(transcript)
         return transcript
 
     async def perform_llm_action(
@@ -119,8 +119,22 @@ class TranscriptService:
         if action == "refine":
             # Pass timestamps to the LLM service if available
             result = await llm_service.refine(transcript.segments)
-            content = segments_to_transcript(result)
-            return await db_service.update_transcript(transcript, content)
+            # New transcript
+            # Create a new transcript with the refined content
+            new_hash = generate_hash(segments_to_transcript(result))
+
+            new_transcript = Transcript(
+                id=new_hash,
+                title=transcript.title,
+                audio_path=transcript.audio_path,
+                segments=result,
+                unedited_id=transcript.unedited_id,
+                previous_id=transcript.id,
+                created_at=transcript.created_at,
+                updated_at=datetime.now(),
+            )
+
+            return await db_service.save_transcript(new_transcript)
         raise ValueError("Unknown action type")
 
     async def export_to_word(self, transcript_id: str) -> io.BytesIO:

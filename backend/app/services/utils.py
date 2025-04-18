@@ -50,12 +50,9 @@ def transcript_to_segments(transcript: str) -> List[TranscriptSegment]:
             # Create segment object
             segment = TranscriptSegment(
                 id=segment_id,
-                seek=0,  # Default value, typically calculated based on audio file
                 start=start_seconds,
                 end=end_seconds,
                 text=text.strip(),
-                tokens=[],  # Default empty list
-                no_speech_prob=0.0,  # Default probability
             )
 
             segments.append(segment)
