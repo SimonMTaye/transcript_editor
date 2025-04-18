@@ -1,5 +1,4 @@
-import { Container, Title, Group, Box, Space } from '@mantine/core';
-import { RecentTranscripts } from '../components/RecentTranscripts';
+import { Container, Title, Group, Box } from '@mantine/core';
 import { AudioUpload } from '../components/AudioUpload';
 
 export function HomePage() {

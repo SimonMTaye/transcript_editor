@@ -11,8 +11,6 @@ import {
   Textarea,
   Stack,
   Text,
-  Divider,
-  ActionIcon,
   Box
 } from '@mantine/core';
 import { transcriptApi, Transcript, TranscriptSegment } from '../services/api';
