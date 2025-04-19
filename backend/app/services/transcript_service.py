@@ -44,7 +44,7 @@ class TranscriptService:
             raise IOError(f"Could not save uploaded file: {e}") from e
         finally:
             file.file.close()
-        return file_path
+        return unique_filename
 
     async def handle_audio_upload(self, title: str, file: UploadFile) -> Transcript:
         """
@@ -55,7 +55,7 @@ class TranscriptService:
         path = await self._save_file(file)
         audio_path_for_db = path
         logger.debug("Calling transcribe service...")
-        _, segments = await whisper_service.transcribe(path)
+        _, segments = await whisper_service.transcribe(os.path.join(UPLOAD_DIR, path))
         if not segments:
             logger.error("Transcription failed or no segments returned.")
             raise ValueError("Transcription failed or no segments returned.")

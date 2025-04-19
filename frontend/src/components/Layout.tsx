@@ -17,13 +17,13 @@ export function Layout({ children }: LayoutProps) {
       header={{ height: 60 }}
       navbar={{
         width: 300,
-        breakpoint: 'sm',
+        breakpoint: 'lg',
         collapsed: { mobile: !opened },
       }}
-      padding="md"
+      footer={{height: 0}}
     >
       <AppShell.Header>
-        <Group h="100%" px="md">
+        <Group h="100%" px="lg">
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
           <UnstyledButton onClick={() => navigate('/')}>
             <Title order={3}>Transcript Editor</Title>
@@ -36,7 +36,7 @@ export function Layout({ children }: LayoutProps) {
         <RecentTranscripts />
       </AppShell.Navbar>
 
-      <AppShell.Main>
+      <AppShell.Main  >
         {children}
       </AppShell.Main>
     </AppShell>

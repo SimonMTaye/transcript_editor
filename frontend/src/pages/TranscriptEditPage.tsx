@@ -11,9 +11,13 @@ import {
   Textarea,
   Stack,
   Text,
-  Box
+  Box,
 } from '@mantine/core';
 import { transcriptApi, Transcript, TranscriptSegment } from '../services/api';
+import { AudioPlayer } from '../components/AudioPlayer';
+
+const AUDIO_BASE_URL = 'http://localhost:8000/uploads';
+
 
 export function TranscriptEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -118,7 +122,7 @@ export function TranscriptEditPage() {
 
   if (!transcript) {
     return (
-      <Container size="lg">
+      <Container fluid>
         <Alert color="yellow" title="Not Found" mt="md">
           Transcript not found
           <Button variant="outline" color="yellow" mt="md" onClick={() => navigate('/')}>
@@ -130,8 +134,8 @@ export function TranscriptEditPage() {
   }
 
   return (
-    <Container size="lg">
-      <Group justify="space-between" mb="lg">
+    <Container fluid style={{minHeight: '100vh', padding: '0rem'}}>
+      <Group p="md" justify="space-between" mb="lg">
         <Title order={2}>{transcript.title}</Title>
         <Group>
           <Button 
@@ -151,18 +155,28 @@ export function TranscriptEditPage() {
           </Button>
         </Group>
       </Group>
+      <Box style={{display: 'flex', flexDirection: 'column', justifyContent:'space-between', height: '100vh'}}>
+        <Paper p="md">
+          <Stack >
+            {transcript.segments.map((segment) => (
+              <SegmentEditor 
+                key={segment.id} 
+                segment={segment} 
+                onChange={handleSegmentChange}
+              />
+            ))}
+          </Stack>
+        </Paper>
+        {/* Add the Audio Player */}
+        {transcript.audio_path && (
+              <AudioPlayer
+                src={`${AUDIO_BASE_URL}/${transcript.audio_path}`}
+                onTimeUpdate={(time: number) => {console.log('Current time:', time);}} 
+                segmentTime={0}
+              />
+        )}
+      </Box>
 
-      <Paper withBorder p="md">
-        <Stack gap="md">
-          {transcript.segments.map((segment) => (
-            <SegmentEditor 
-              key={segment.id} 
-              segment={segment} 
-              onChange={handleSegmentChange}
-            />
-          ))}
-        </Stack>
-      </Paper>
     </Container>
   );
 }
