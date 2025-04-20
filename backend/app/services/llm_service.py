@@ -62,3 +62,16 @@ class LLMService:
 
 
 llm_service = LLMService()
+
+"""
+Please refine this interview transcript to improve readability and make it appropriate for a written post. 
+Remove speech artifacts (ums, ahs, repeated words), fix obvious grammatical errors and delete pleasantries with no other content.
+Remove redundant content, ensure natural flow, shorten where appropriate and remove unnecessary connective words.
+Maintain all important information, and the speaker's word choices when it doesn't feel awkward to read. 
+If you decide to change wording then make sure to preserve the original intention 
+Try to reduce the transcript to 1500-2500 words
+
+
+---------------------------------
+Transcript:
+"""

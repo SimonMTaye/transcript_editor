@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from from '@tanstack/react-query';
 import { transcriptApi, TranscriptSummary } from '../services/api';
 import { List, ThemeIcon, Text, Loader, Alert } from '@mantine/core'; 
 import { Link } from 'react-router-dom';
