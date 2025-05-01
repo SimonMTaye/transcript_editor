@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Container,
@@ -11,13 +11,13 @@ import {
   Stack,
   Box,
 } from "@mantine/core";
-import { transcriptApi, Transcript } from "../services/api";
 import { AudioPlayer, AudioPlayerRef } from "../components/AudioPlayer";
 import { SegmentEditor } from "../components/SegmentEditor";
-
-const AUDIO_BASE_URL = "http://localhost:8000/uploads";
+import { Transcript } from "../models/transcript";
+import { APIContext } from "../App";
 
 export function TranscriptEditPage() {
+  const transcriptApi = useContext(APIContext);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [transcript, setTranscript] = useState<Transcript | null>(null);
@@ -36,7 +36,9 @@ export function TranscriptEditPage() {
 
       try {
         setLoading(true);
-        const data = await transcriptApi.getTranscript(id);
+        // INFO: We are assuming the transcript is an audio transcript
+        // But this will need to be changed or enforced through a stronger guarantee
+        const data = (await transcriptApi.getTranscript(id)) as Transcript;
         setTranscript(data);
         setError("");
       } catch (err) {
@@ -65,7 +67,7 @@ export function TranscriptEditPage() {
     if (!transcript) return;
 
     const updatedSegments = transcript.segments.map((segment) =>
-      segment.id === segmentId ? { ...segment, text: newText } : segment
+      segment.s_id === segmentId ? { ...segment, text: newText } : segment
     );
 
     setTranscript({ ...transcript, segments: updatedSegments });
@@ -81,7 +83,7 @@ export function TranscriptEditPage() {
     );
 
     const currentActiveId = currentSegment
-      ? currentSegment.id
+      ? currentSegment.s_id
       : activeSegmentId;
 
     // Update active segment ID only if it changed
@@ -100,7 +102,11 @@ export function TranscriptEditPage() {
 
     try {
       setRefining(true);
-      const refinedTranscript = await transcriptApi.refineTranscript(id);
+      // Since original data was audio transcript we can assume the refinement is as well
+      const refinedTranscript = (await transcriptApi.llmAction(
+        id,
+        "refine"
+      )) as Transcript;
       setTranscript(refinedTranscript);
       setError("");
     } catch (err) {
@@ -214,11 +220,11 @@ export function TranscriptEditPage() {
           <Stack>
             {transcript.segments.map((segment) => (
               <SegmentEditor
-                key={segment.id}
+                key={segment.s_id}
                 segment={segment}
                 onChange={handleSegmentChange}
-                isActive={segment.id === activeSegmentId}
-                refCallback={(el) => segmentRefs.current.set(segment.id, el)} // Pass ref callback to store element reference
+                isActive={segment.s_id === activeSegmentId}
+                refCallback={(el) => segmentRefs.current.set(segment.s_id, el)} // Pass ref callback to store element reference
                 onClick={handleSegmentClick} // Pass click handler to set active segment
                 // Pass ref callback to store element reference
               />
@@ -226,9 +232,9 @@ export function TranscriptEditPage() {
           </Stack>
         </Paper>
         {/* Add the Audio Player */}
-        {transcript.audio_path && (
+        {transcript.file_url && (
           <AudioPlayer
-            src={`${AUDIO_BASE_URL}/${transcript.audio_path}`}
+            src={transcript.file_url}
             onTimeUpdate={handleTimeUpdate}
             ref={audioPlayerRef}
           />

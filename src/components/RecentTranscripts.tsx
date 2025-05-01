@@ -1,15 +1,18 @@
-import { useQuery } from from '@tanstack/react-query';
-import { transcriptApi, TranscriptSummary } from '../services/api';
-import { List, ThemeIcon, Text, Loader, Alert } from '@mantine/core'; 
-import { Link } from 'react-router-dom';
+import { useQuery } from "@tanstack/react-query";
+import { List, ThemeIcon, Text, Loader, Alert } from "@mantine/core";
+import { Link } from "react-router-dom";
+import { TranscriptMeta } from "../models/transcript";
+import { APIContext } from "../App";
+import { useContext } from "react";
 
 export function RecentTranscripts() {
-  const { 
-    data: transcripts, 
-    isLoading, 
-    error 
-  } = useQuery<TranscriptSummary[], Error>({
-    queryKey: ['recentTranscripts'], // Unique key for this query
+  const transcriptApi = useContext(APIContext);
+  const {
+    data: transcripts,
+    isLoading,
+    error,
+  } = useQuery<TranscriptMeta[], Error>({
+    queryKey: ["recentTranscripts"], // Unique key for this query
     queryFn: transcriptApi.getRecentTranscripts, // Function to fetch data
   });
 
@@ -18,7 +21,11 @@ export function RecentTranscripts() {
   }
 
   if (error) {
-    return <Alert color="red" title="Error">Failed to load recent transcripts: {error.message}</Alert>;
+    return (
+      <Alert color="red" title="Error">
+        Failed to load recent transcripts: {error.message}
+      </Alert>
+    );
   }
 
   if (!transcripts || transcripts.length === 0) {
@@ -30,11 +37,12 @@ export function RecentTranscripts() {
       {transcripts.map((transcript) => (
         <List.Item
           key={transcript.id}
-          icon={
-            <ThemeIcon color="blue" size={24} radius="xl" />
-          }
+          icon={<ThemeIcon color="blue" size={24} radius="xl" />}
         >
-          <Link to={`/transcript/${transcript.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link
+            to={`/transcript/${transcript.id}`}
+            style={{ textDecoration: "none", color: "inherit" }}
+          >
             <Text size="sm">{transcript.title}</Text>
             <Text size="xs" c="dimmed">
               Updated: {new Date(transcript.updated_at).toLocaleString()}

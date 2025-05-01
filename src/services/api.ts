@@ -1,85 +1,59 @@
-import axios from 'axios';
+import { Transcript, TranscriptMeta } from "../models/transcript";
+import { FileStore } from "./store/file_store";
+import { pbDatabase, pbFileStore } from "./store/pocketbase";
+import { TranscriptDB } from "./store/transcript_db";
 
-const API_URL = 'http://localhost:8000';  // Adjust this to your backend URL
-const API_PREFIX = '/api/v1/transcripts'; // Add API prefix to match backend router configuration
+export type Action = "refine" 
 
-export interface TranscriptSegment {
-  id: number;
-  start: number;
-  end: number;
-  text: string;
-}
-
-export interface Transcript {
-  id: string;
-  title: string;
-  audio_path: string | null;
-  segments: TranscriptSegment[];
-  unedited_id: string;
-  previous_id: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface TranscriptSummary {
-  id: string;
-  title: string;
-  updated_at: string;
-}
-
-// API client
-const apiClient = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Transcript service
-export const transcriptApi = {
+export interface TranscriptApi {
   // Get recent transcripts
-  getRecentTranscripts: async (): Promise<TranscriptSummary[]> => {
-    const response = await apiClient.get(`${API_PREFIX}/recent`);
-    return response.data;
-  },
+  getRecentTranscripts(): Promise<TranscriptMeta[]>;
 
   // Get a specific transcript
-  getTranscript: async (id: string): Promise<Transcript> => {
-    const response = await apiClient.get(`${API_PREFIX}/fetch/${id}`);
-    return response.data;
-  },
+  getTranscript(id: string): Promise<Transcript>;
 
   // Upload a new audio file
-  uploadAudio: async (title: string, file: File): Promise<Transcript> => {
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('file', file);
-    
-    try {
-      const response = await apiClient.post(`${API_PREFIX}/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error uploading audio file:', error);
-      throw error;
-    }
-  },
+  uploadAudio(title: string, file: File): Promise<Transcript>;
 
   // Refine transcript with LLM
-  refineTranscript: async (id: string): Promise<Transcript> => {
-    const response = await apiClient.post(`${API_PREFIX}/refine/${id}`);
-    return response.data;
-  },
+  llmAction(id: string, action: Action): Promise<Transcript>;
 
   // Export transcript to Word
-  exportToWord: async (id: string): Promise<Blob> => {
-    const response = await apiClient.get(`${API_PREFIX}/export/${id}`, {
-      responseType: 'blob',
-    });
-    return response.data;
-  },
-};
+  exportToWord(id: string): Promise<Blob>;
+} 
+
+const apiFactory = (file_store: FileStore, database: TranscriptDB): TranscriptApi => {
+  return {
+    getRecentTranscripts: async () => {
+      const transcripts = await database.getRecentTranscriptMeta(10, 0);
+      return transcripts;
+    },
+    getTranscript: async (id: string) => {
+      const transcript = await database.getTranscript(id);
+      return transcript;
+    },
+    uploadAudio: async (title: string, file: File) => {
+      const { file_id, file_url} = await file_store.uploadFile(file, "audio");
+      console.log("File uploaded successfully:", file_id, file_url);
+      const transcriptMeta = await database.createTranscriptMeta(
+        title,
+        file_id,
+        file_url,
+        "audio"
+      );
+      return await database.createTranscriptData(
+        transcriptMeta.id,
+        []
+      );
+    },
+    llmAction: async (id: string, action: Action) => {
+      // TODO: Implement using LLM call
+      return await database.getTranscript(id);
+    },
+    exportToWord: async (id: string) => {
+      throw new Error("Not implemented");
+    },
+  };
+}
+
+export const transcriptApi = apiFactory(pbFileStore, pbDatabase);

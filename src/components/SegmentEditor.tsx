@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Group, Textarea, Text, Box } from "@mantine/core";
-import { TranscriptSegment } from "../services/api";
+import { TranscriptSegment } from "../models/transcript_record";
 
 interface SegmentEditorProps {
   segment: TranscriptSegment;
@@ -43,7 +43,7 @@ export function SegmentEditor({
         </Text>
         <Textarea
           value={segment.text}
-          onChange={(e) => onChange(segment.id, e.target.value)}
+          onChange={(e) => onChange(segment.s_id, e.target.value)}
           autosize
           minLength={100}
           styles={{
