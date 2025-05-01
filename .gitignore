@@ -50,3 +50,8 @@ Thumbs.db
 backend/uploads
 backend/transcript_editor.db
 test_audio
+
+# Pocketbase
+pb_data
+pb_migrations
+pocketbase.app
