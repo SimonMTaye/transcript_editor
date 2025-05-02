@@ -103,10 +103,7 @@ export function TranscriptEditPage() {
     try {
       setRefining(true);
       // Since original data was audio transcript we can assume the refinement is as well
-      const refinedTranscript = (await transcriptApi.llmAction(
-        id,
-        "refine"
-      )) as Transcript;
+      const refinedTranscript = await transcriptApi.refineTranscript(id);
       setTranscript(refinedTranscript);
       setError("");
     } catch (err) {

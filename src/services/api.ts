@@ -2,8 +2,9 @@ import { Transcript, TranscriptMeta } from "../models/transcript";
 import { FileStore } from "./store/file_store";
 import { pbDatabase, pbFileStore } from "./store/pocketbase";
 import { TranscriptDB } from "./store/transcript_db";
-
-export type Action = "refine" 
+import { Transcriber } from "./transcribe/transcribe";
+import { whisperTranscriber } from "./transcribe/whisper_transcriber";
+import { transformer, Transformer } from "./transform";
 
 export interface TranscriptApi {
   // Get recent transcripts
@@ -16,13 +17,13 @@ export interface TranscriptApi {
   uploadAudio(title: string, file: File): Promise<Transcript>;
 
   // Refine transcript with LLM
-  llmAction(id: string, action: Action): Promise<Transcript>;
+  refineTranscript(id: string): Promise<Transcript>;
 
   // Export transcript to Word
   exportToWord(id: string): Promise<Blob>;
 } 
 
-const apiFactory = (file_store: FileStore, database: TranscriptDB): TranscriptApi => {
+const apiFactory = (file_store: FileStore, database: TranscriptDB, transcriber: Transcriber, transformer: Transformer): TranscriptApi => {
   return {
     getRecentTranscripts: async () => {
       const transcripts = await database.getRecentTranscriptMeta(10, 0);
@@ -41,19 +42,28 @@ const apiFactory = (file_store: FileStore, database: TranscriptDB): TranscriptAp
         file_url,
         "audio"
       );
+      const audioTranscript = await transcriber.transcribeAudio(file);
       return await database.createTranscriptData(
         transcriptMeta.id,
-        []
+        audioTranscript,
       );
     },
-    llmAction: async (id: string, action: Action) => {
+    refineTranscript: async (id: string) => {
       // TODO: Implement using LLM call
-      return await database.getTranscript(id);
+      const transcript = await database.getTranscript(id);
+      const refinedSegments = await transformer.refine(transcript.segments);
+      // Create a new transcript data entry in the database
+      const refinedTranscript = await database.createTranscriptData(
+        transcript.id,
+        refinedSegments,
+      );
+      return refinedTranscript;
+      
     },
     exportToWord: async (id: string) => {
-      throw new Error("Not implemented");
+      throw new Error(`Not implemented for ${id}`);
     },
   };
 }
 
-export const transcriptApi = apiFactory(pbFileStore, pbDatabase);
+export const transcriptApi = apiFactory(pbFileStore, pbDatabase, whisperTranscriber, transformer);
