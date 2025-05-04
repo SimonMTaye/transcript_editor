@@ -10,6 +10,7 @@ import {
   Paper,
   Stack,
   Box,
+  Text,
 } from "@mantine/core";
 import { AudioPlayer, AudioPlayerRef } from "../components/AudioPlayer";
 import { SegmentEditor } from "../components/SegmentEditor";
@@ -20,6 +21,7 @@ import {
   IconDeviceFloppy,
   IconFileWord,
 } from "@tabler/icons-react";
+import { countWords } from "../utils/word_count";
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);
@@ -38,6 +40,7 @@ export function TranscriptEditPage() {
   const [activeSegmentId, setActiveSegmentId] = useState<number>(0);
   const segmentRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
   const audioPlayerRef = useRef<AudioPlayerRef>(null);
+  const [wordCount, setWordCount] = useState(0);
 
   const checkPocketBaseAutocancellation = (err: any) => {
     if (
@@ -61,6 +64,7 @@ export function TranscriptEditPage() {
         // But this will need to be changed or enforced through a stronger guarantee
         const data = (await transcriptApi.getTranscript(id)) as Transcript;
         setTranscript(data);
+        setWordCount(countWords(data.segments));
         setError("");
         setLoading(false);
       } catch (err) {
@@ -98,6 +102,7 @@ export function TranscriptEditPage() {
       }
     });
     setTranscript(transcript);
+    setWordCount(countWords(transcript!.segments));
   };
   // Update the transcript state with the edited segments
   // Callback for AudioPlayer time updates
@@ -217,9 +222,12 @@ export function TranscriptEditPage() {
   return (
     <Container fluid style={{ minHeight: "100vh", padding: "0rem" }}>
       <Group p="sm" justify="space-between">
-        <Title ml="xl" order={2}>
-          {transcript.title}
-        </Title>
+        <Stack align="flex-start" gap={0} justify="flex-start" ml="xl">
+          <Title order={2}>{transcript.title}</Title>
+          <Text size="sm" c="dimmed" onClick={() => getEditedSegmentData()}>
+            {`${wordCount} words`}
+          </Text>
+        </Stack>
         <Group>
           <Button
             onClick={handleSave}
@@ -236,7 +244,7 @@ export function TranscriptEditPage() {
             disabled={refining}
             variant="outline"
           >
-            Refine with LLM
+            Refine
           </Button>
           <Button
             leftSection={<IconFileWord size={16} />}
@@ -244,7 +252,7 @@ export function TranscriptEditPage() {
             loading={exporting}
             disabled={exporting}
           >
-            Export to Word
+            Export
           </Button>
         </Group>
       </Group>
