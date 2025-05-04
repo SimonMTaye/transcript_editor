@@ -1,28 +1,26 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Group, Textarea, Text, Box } from "@mantine/core";
-import { TranscriptSegment } from "../models/transcript_record";
+import { TranscriptSegment } from "../models/transcript";
 
 interface SegmentEditorProps {
   segment: TranscriptSegment;
-  onChange: (segmentId: number, newText: string) => void;
   isActive: boolean;
-  refCallback: (el: HTMLDivElement) => void;
+  refCallback: (el: HTMLTextAreaElement) => void;
   onClick: (time: number) => void;
 }
 
 export function SegmentEditor({
   segment,
-  onChange,
   isActive,
   refCallback,
   onClick,
 }: SegmentEditorProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const formatTime = (seconds: number): string => {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const formatTime = useCallback((seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
-  };
+  }, []);
 
   useEffect(() => {
     if (ref.current) {
@@ -31,7 +29,7 @@ export function SegmentEditor({
   }, [ref]);
 
   return (
-    <Box ref={ref} onClick={() => (!isActive ? onClick(segment.start) : null)}>
+    <Box onClick={() => (!isActive ? onClick(segment.start) : null)}>
       <Group
         preventGrowOverflow={false}
         gap="xs"
@@ -39,11 +37,11 @@ export function SegmentEditor({
         justify="flex-start"
       >
         <Text size="xs" c="dimmed">
-          [{formatTime(segment.start)}]
+          {formatTime(segment.start)}
         </Text>
         <Textarea
-          value={segment.text}
-          onChange={(e) => onChange(segment.s_id, e.target.value)}
+          ref={ref}
+          defaultValue={segment.text}
           autosize
           minLength={100}
           styles={{

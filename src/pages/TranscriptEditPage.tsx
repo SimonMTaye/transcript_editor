@@ -15,20 +15,41 @@ import { AudioPlayer, AudioPlayerRef } from "../components/AudioPlayer";
 import { SegmentEditor } from "../components/SegmentEditor";
 import { Transcript } from "../models/transcript";
 import { APIContext } from "../App";
+import {
+  IconAutomation,
+  IconDeviceFloppy,
+  IconFileWord,
+} from "@tabler/icons-react";
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);
+  // URL param using which we can get the transcript ID
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // Current transcript being worked on
   const [transcript, setTranscript] = useState<Transcript | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // State variables used for UI elements
+  const [loading, setLoading] = useState(true);
   const [refining, setRefining] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [saving, setSaving] = useState(false);
   // Segment tracking to allow scrolling to the active segment based on audio time
   const [activeSegmentId, setActiveSegmentId] = useState<number>(0);
-  const segmentRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const segmentRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
   const audioPlayerRef = useRef<AudioPlayerRef>(null);
+
+  const checkPocketBaseAutocancellation = (err: any) => {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "isAbort" in err &&
+      err.isAbort
+    ) {
+      return true; // Ignore abort errors
+    }
+    return false;
+  };
 
   useEffect(() => {
     const fetchTranscript = async () => {
@@ -41,14 +62,17 @@ export function TranscriptEditPage() {
         const data = (await transcriptApi.getTranscript(id)) as Transcript;
         setTranscript(data);
         setError("");
+        setLoading(false);
       } catch (err) {
+        if (checkPocketBaseAutocancellation(err)) {
+          console.warn("Fetch aborted:", err);
+          return; // Ignore abort errors
+        }
         console.error("Failed to fetch transcript:", err);
         setError("Failed to load transcript");
-      } finally {
-        setLoading(false);
       }
     };
-
+    console.log("Fetching transcript with ID:", id);
     fetchTranscript();
   }, [id]);
 
@@ -63,16 +87,19 @@ export function TranscriptEditPage() {
     }
   }, [activeSegmentId]); // Run when activeSegmentId changes
 
-  const handleSegmentChange = (segmentId: number, newText: string) => {
-    if (!transcript) return;
-
-    const updatedSegments = transcript.segments.map((segment) =>
-      segment.s_id === segmentId ? { ...segment, text: newText } : segment
-    );
-
-    setTranscript({ ...transcript, segments: updatedSegments });
+  // Write a function to read through the stored segment refs and get most recent data
+  const getEditedSegmentData = () => {
+    transcript?.segments.forEach((segment) => {
+      const ref = segmentRefs.current.get(segment.s_id);
+      if (ref) {
+        const updatedText = ref.value;
+        // Update the segment text with the new value
+        segment.text = updatedText;
+      }
+    });
+    setTranscript(transcript);
   };
-
+  // Update the transcript state with the edited segments
   // Callback for AudioPlayer time updates
   const handleTimeUpdate = (time: number) => {
     if (!transcript) return;
@@ -102,6 +129,7 @@ export function TranscriptEditPage() {
 
     try {
       setRefining(true);
+      getEditedSegmentData();
       // Since original data was audio transcript we can assume the refinement is as well
       const refinedTranscript = await transcriptApi.refineTranscript(id);
       setTranscript(refinedTranscript);
@@ -119,6 +147,7 @@ export function TranscriptEditPage() {
 
     try {
       setExporting(true);
+      getEditedSegmentData();
       const blob = await transcriptApi.exportToWord(id);
 
       // Create a download link for the Word document
@@ -137,7 +166,27 @@ export function TranscriptEditPage() {
     }
   };
 
-  if (loading) {
+  const handleSave = async () => {
+    if (!id || !transcript) return;
+
+    try {
+      setSaving(true);
+      getEditedSegmentData();
+      const savedTranscript = await transcriptApi.saveTranscriptEdits(
+        id,
+        transcript.segments
+      );
+      setTranscript(savedTranscript);
+      setError("");
+    } catch (err) {
+      console.error("Failed to save transcript:", err);
+      setError("Failed to save transcript");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading || !transcript) {
     return (
       <Container size="lg">
         <Group justify="center" mt="xl">
@@ -151,7 +200,7 @@ export function TranscriptEditPage() {
     return (
       <Container size="lg">
         <Alert color="red" title="Error" mt="md">
-          {error}
+          {`${error}\n\n`}
           <Button
             variant="outline"
             color="red"
@@ -165,30 +214,23 @@ export function TranscriptEditPage() {
     );
   }
 
-  if (!transcript) {
-    return (
-      <Container fluid>
-        <Alert color="yellow" title="Not Found" mt="md">
-          Transcript not found
-          <Button
-            variant="outline"
-            color="yellow"
-            mt="md"
-            onClick={() => navigate("/")}
-          >
-            Go back to home
-          </Button>
-        </Alert>
-      </Container>
-    );
-  }
-
   return (
     <Container fluid style={{ minHeight: "100vh", padding: "0rem" }}>
-      <Group p="md" justify="space-between" mb="lg">
-        <Title order={2}>{transcript.title}</Title>
+      <Group p="sm" justify="space-between">
+        <Title ml="xl" order={2}>
+          {transcript.title}
+        </Title>
         <Group>
           <Button
+            onClick={handleSave}
+            loading={saving}
+            disabled={saving}
+            leftSection={<IconDeviceFloppy size={16} />}
+          >
+            Save
+          </Button>
+          <Button
+            leftSection={<IconAutomation size={16} />}
             onClick={handleRefine}
             loading={refining}
             disabled={refining}
@@ -197,6 +239,7 @@ export function TranscriptEditPage() {
             Refine with LLM
           </Button>
           <Button
+            leftSection={<IconFileWord size={16} />}
             onClick={handleExport}
             loading={exporting}
             disabled={exporting}
@@ -213,13 +256,12 @@ export function TranscriptEditPage() {
           height: "100vh",
         }}
       >
-        <Paper p="md">
+        <Paper p="sm">
           <Stack>
             {transcript.segments.map((segment) => (
               <SegmentEditor
                 key={segment.s_id}
                 segment={segment}
-                onChange={handleSegmentChange}
                 isActive={segment.s_id === activeSegmentId}
                 refCallback={(el) => segmentRefs.current.set(segment.s_id, el)} // Pass ref callback to store element reference
                 onClick={handleSegmentClick} // Pass click handler to set active segment
