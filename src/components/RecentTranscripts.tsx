@@ -1,20 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
-import { List, ThemeIcon, Text, Loader, Alert } from "@mantine/core";
+import {
+  Text,
+  Loader,
+  Alert,
+  Group,
+  ActionIcon,
+  Container,
+  Stack,
+} from "@mantine/core";
 import { Link } from "react-router-dom";
 import { TranscriptMeta } from "../models/transcript";
 import { APIContext } from "../App";
-import { useContext } from "react";
+import { useContext, useState } from "react";
+import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
+import { TRANSCRIPTS_SUMMARIES_LIMIT } from "../services/api";
 
 export function RecentTranscripts() {
   const transcriptApi = useContext(APIContext);
+  const [page, setPage] = useState(1);
   const {
     data: transcripts,
     isLoading,
     error,
   } = useQuery<TranscriptMeta[], Error>({
-    queryKey: ["recentTranscripts"], // Unique key for this query
-    queryFn: transcriptApi.getRecentTranscripts, // Function to fetch data
+    queryKey: ["recentTranscripts", page],
+    queryFn: () => transcriptApi.getRecentTranscripts(page),
   });
+
+  const handleNextPage = () => {
+    setPage((prevPage) => prevPage + 1);
+  };
+
+  const handlePreviousPage = () => {
+    setPage((prevPage) => Math.max(prevPage - 1, 1));
+  };
 
   if (isLoading) {
     return <Loader size="sm" />;
@@ -28,28 +47,80 @@ export function RecentTranscripts() {
     );
   }
 
-  if (!transcripts || transcripts.length === 0) {
-    return <Text size="sm">No recent transcripts found.</Text>;
-  }
-
   return (
-    <List spacing="xs" size="sm" center>
-      {transcripts.map((transcript) => (
-        <List.Item
-          key={transcript.id}
-          icon={<ThemeIcon color="blue" size={24} radius="xl" />}
-        >
-          <Link
-            to={`/transcript/${transcript.id}`}
-            style={{ textDecoration: "none", color: "inherit" }}
+    <Container style={{ minHeight: "100vh", padding: "0rem" }}>
+      {transcripts && transcripts.length > 0 && (
+        <Stack gap="xs">
+          {transcripts.map((transcript) => (
+            <Link
+              key={transcript.id}
+              to={`/transcript/${transcript.id}`}
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <Group>
+                <div>
+                  <Text size="sm">{transcript.title}</Text>
+                  <Text size="xs" c="dimmed">
+                    {new Date(transcript.updated_at).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      }
+                    )}
+                    <Text component="span" mx={4}>
+                      •
+                    </Text>
+                    {new Date(transcript.updated_at)
+                      .toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        hour12: true,
+                      })
+                      .toLowerCase()}
+                  </Text>
+                </div>
+              </Group>
+            </Link>
+          ))}
+        </Stack>
+      )}
+      {transcripts &&
+        (transcripts.length >= TRANSCRIPTS_SUMMARIES_LIMIT || page > 1) && (
+          <Group
+            // Used fixed position to center; find better way eventually
+            style={{
+              position: "fixed",
+              left: "6rem",
+              bottom: "1rem",
+              zIndex: 100,
+            }}
+            justify="center"
+            m="auto"
           >
-            <Text size="sm">{transcript.title}</Text>
-            <Text size="xs" c="dimmed">
-              Updated: {new Date(transcript.updated_at).toLocaleString()}
-            </Text>
-          </Link>
-        </List.Item>
-      ))}
-    </List>
+            <ActionIcon
+              onClick={handlePreviousPage}
+              disabled={page === 1 || isLoading} // Disable while loading new page too
+              variant="light"
+            >
+              <IconArrowLeft size={18} />
+            </ActionIcon>
+            <Text size="sm">{page}</Text>
+            <ActionIcon
+              onClick={handleNextPage}
+              disabled={
+                isLoading ||
+                !transcripts ||
+                transcripts.length < TRANSCRIPTS_SUMMARIES_LIMIT
+              } // Disable if less than 10 items
+              variant="light"
+            >
+              <IconArrowRight size={18} />
+            </ActionIcon>
+            {isLoading && <Loader size="xs" />}{" "}
+            {/* Show small loader during page change */}
+          </Group>
+        )}
+    </Container>
   );
 }

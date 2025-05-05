@@ -6,6 +6,7 @@ import { Transcriber } from "./transcribe/transcribe";
 import { whisperTranscriber } from "./transcribe/whisper_transcriber";
 import { transformer, Transformer } from "./transform";
 
+export const TRANSCRIPTS_SUMMARIES_LIMIT = 15;
 const apiFactory = (
   file_store: FileStore,
   database: TranscriptDB,
@@ -13,8 +14,11 @@ const apiFactory = (
   transformer: Transformer
 ) => {
   return {
-    getRecentTranscripts: async () => {
-      const transcripts = await database.getRecentTranscriptMeta(10, 0);
+    getRecentTranscripts: async (page: number = 1) => {
+      const transcripts = await database.getRecentTranscriptMeta(
+        TRANSCRIPTS_SUMMARIES_LIMIT,
+        page
+      );
       return transcripts;
     },
     getTranscript: async (id: string) => {
