@@ -1,7 +1,6 @@
-
 /**
  * Represents single segment of a transcript.
- * 
+ *
  * @interface TranscriptSegment
  * @property {string} s_id - Unique identifier for the transcript (s_id to avoid conflicts).
  * @property {number} start - Start time of the segment in seconds.
@@ -10,7 +9,7 @@
  * @property {string} speaker - Speaker identifier (optional).
  */
 
-export interface TranscriptSegment  {
+export interface TranscriptSegment {
   s_id: number;
   speaker?: string;
   start: number;
@@ -20,7 +19,7 @@ export interface TranscriptSegment  {
 
 /**
  * Represents a transcript object for use with the transcript editor
- * 
+ *
  * @interface Transcript
  * @property {string} id - Unique identifier for the transcript.
  * @property {string} title - Title of the transcript.
@@ -38,15 +37,24 @@ export interface Transcript {
   previous_did: string;
   file_id: string;
   file_url: string;
+  file_type: file_type;
   created_at: string;
   updated_at: string;
   segments: TranscriptSegment[];
 }
 
+export type TranscriptData = {
+  id: string;
+  previous_did: string;
+  meta_id: string;
+  created_at: string;
+  updated_at: string;
+  segments: TranscriptSegment[];
+};
 
 /**
  * Represents a transcript metadata for use with the sidebar
- * 
+ *
  * @interface TranscriptMeta
  * @property {string} id - Unique identifier for the transcript.
  * @property {string} title - Title of the transcript.
@@ -68,6 +76,30 @@ export interface TranscriptMeta {
   data_id: string;
 }
 
-export type file_type = "audio" | "none"
-export const NO_FILE = "no_file"
+/**
+ * Joins transcript metadata and data into a single object.
+ *
+ * @param data - The transcript data to join.
+ * @param meta - The transcript metadata to join.
+ * @returns An object containing combined transcript data and metadata.
+ */
+export function joinMetaAndData(
+  meta: TranscriptMeta,
+  data: TranscriptData
+): Transcript {
+  return {
+    id: meta.id,
+    title: meta.title,
+    data_id: data.id,
+    previous_did: data.previous_did,
+    file_id: meta.file_id,
+    file_url: meta.file_url,
+    file_type: meta.file_type,
+    created_at: data.updated_at,
+    updated_at: meta.created_at,
+    segments: data.segments,
+  };
+}
 
+export type file_type = "audio" | "none";
+export const NO_FILE = "no_file";
