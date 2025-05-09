@@ -14,7 +14,7 @@ function flattenSegements(segments: TranscriptSegment[]) {
     } else {
       // Otherwise, push a new segment
       acc.push({
-        speaker: segment.speaker,
+        speaker: segment.speaker ? segment.speaker : "Unknown",
         text: segment.text,
       });
     }
@@ -92,11 +92,6 @@ export const wordExport: Exporter = {
     });
 
     // Create a buffer and save the document
-    const buffer = await Packer.toBuffer(doc);
-    const blob = new Blob([buffer], {
-      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    });
-    // Make sure to set the correct MIME type for Word documents
-    return blob;
+    return await Packer.toBlob(doc);
   },
 };
