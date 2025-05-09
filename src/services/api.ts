@@ -1,4 +1,10 @@
-import { TranscriptSegment } from "../models/transcript";
+import {
+  splitTranscriptIntoMetaAndData,
+  TranscriptSegment,
+  Transcript,
+} from "../models/transcript";
+import { Exporter } from "./export";
+import { wordExport } from "./export/word_exporter";
 import { FileStore } from "./store/file_store";
 import { pbDatabase, pbFileStore } from "./store/pocketbase";
 import { TranscriptDB } from "./store/transcript_db";
@@ -11,7 +17,8 @@ const apiFactory = (
   file_store: FileStore,
   database: TranscriptDB,
   transcriber: Transcriber,
-  transformer: Transformer
+  transformer: Transformer,
+  exporter: Exporter
 ) => {
   return {
     getRecentTranscripts: async (page: number = 1) => {
@@ -53,8 +60,10 @@ const apiFactory = (
     saveTranscriptEdits(id: string, segments: TranscriptSegment[]) {
       return database.createTranscriptData(id, segments);
     },
-    exportToWord: async (id: string) => {
-      throw new Error(`Not implemented for ${id}`);
+    exportToWord: async (transcript: Transcript) => {
+      const { meta, data } = splitTranscriptIntoMetaAndData(transcript);
+      const wordDocument = await exporter.exportTranscript(meta, data);
+      return wordDocument;
     },
   };
 };
@@ -63,5 +72,6 @@ export const transcriptApi = apiFactory(
   pbFileStore,
   pbDatabase,
   whisperTranscriber,
-  transformer
+  transformer,
+  wordExport
 );

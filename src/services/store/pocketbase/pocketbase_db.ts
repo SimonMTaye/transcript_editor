@@ -1,8 +1,10 @@
 import {
   Transcript,
+  TranscriptData,
   TranscriptMeta,
   TranscriptSegment,
   file_type,
+  joinMetaAndData,
 } from "../../../models/transcript";
 import { TranscriptDB } from "../transcript_db";
 import { pb } from ".";
@@ -13,9 +15,8 @@ const DATA_COLLECTION = "transcript_data"; // Replace with your actual collectio
 type TranscriptMetaPB = TranscriptMeta & {
   deleted: boolean;
 };
-type TranscriptDataPB = Omit<Transcript, "data_id" | "file_id" | "title"> & {
+type TranscriptDataPB = TranscriptData & {
   deleted: boolean;
-  meta_id: string;
 };
 /**
  * Interface representing a database for managing transcripts.
@@ -29,17 +30,7 @@ export const pbDB: TranscriptDB = {
     const transcriptData = await pb
       .collection(DATA_COLLECTION)
       .getOne<TranscriptDataPB>(metadata.data_id);
-    return {
-      id: metadata.id,
-      title: metadata.title,
-      file_id: metadata.file_id,
-      file_url: metadata.file_url,
-      segments: transcriptData.segments,
-      data_id: transcriptData.id,
-      previous_did: transcriptData.previous_did,
-      created_at: metadata.created_at,
-      updated_at: transcriptData.updated_at,
-    };
+    return joinMetaAndData(metadata, transcriptData);
   },
 
   async getRecentTranscriptMeta(
@@ -74,17 +65,7 @@ export const pbDB: TranscriptDB = {
     await pb.collection(META_COLLECTION).update<TranscriptMetaPB>(meta_id, {
       data_id: createdTranscript.id,
     });
-    return {
-      id: metadata.id,
-      title: metadata.title,
-      file_id: metadata.file_id,
-      file_url: metadata.file_url,
-      segments: createdTranscript.segments,
-      data_id: createdTranscript.id,
-      previous_did: createdTranscript.previous_did,
-      created_at: metadata.created_at,
-      updated_at: createdTranscript.updated_at,
-    };
+    return joinMetaAndData(metadata, createdTranscript);
   },
 
   async createTranscriptMeta(
