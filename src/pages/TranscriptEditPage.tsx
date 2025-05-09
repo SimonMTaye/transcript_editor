@@ -153,16 +153,16 @@ export function TranscriptEditPage() {
     try {
       setExporting(true);
       getEditedSegmentData();
-      const blob = await transcriptApi.exportToWord(id);
-
-      // Create a download link for the Word document
+      const blob = await transcriptApi.exportToWord(transcript);
+      // Trigger a download of the Word document
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `${transcript.title}.docx`);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Failed to export transcript:", err);
       setError("Failed to export transcript");

@@ -50,6 +50,7 @@ Thumbs.db
 backend/uploads
 backend/transcript_editor.db
 test_audio
+.test_output
 
 # Pocketbase
 pb_data

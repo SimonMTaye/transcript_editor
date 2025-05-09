@@ -101,5 +101,36 @@ export function joinMetaAndData(
   };
 }
 
+/**
+ *
+ * @param transcript - The transcript object to split.
+ * @returns
+ */
+export function splitTranscriptIntoMetaAndData(transcript: Transcript): {
+  meta: TranscriptMeta;
+  data: TranscriptData;
+} {
+  return {
+    meta: {
+      id: transcript.id,
+      title: transcript.title,
+      created_at: transcript.created_at,
+      updated_at: transcript.updated_at,
+      file_id: transcript.file_id,
+      file_url: transcript.file_url,
+      file_type: transcript.file_type,
+      data_id: transcript.data_id,
+    },
+    data: {
+      id: transcript.data_id,
+      previous_did: transcript.previous_did,
+      meta_id: transcript.id,
+      created_at: transcript.created_at,
+      updated_at: transcript.updated_at,
+      segments: transcript.segments,
+    },
+  };
+}
+
 export type file_type = "audio" | "none";
 export const NO_FILE = "no_file";
