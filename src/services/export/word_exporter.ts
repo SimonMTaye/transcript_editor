@@ -2,7 +2,7 @@ import {
   TranscriptData,
   TranscriptMeta,
   TranscriptSegment,
-} from "../../models/transcript";
+} from "@shared/transcript";
 import { Exporter } from ".";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 

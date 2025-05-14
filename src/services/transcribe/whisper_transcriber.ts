@@ -1,6 +1,6 @@
 import OpenAI from "openai";
-import { TranscriptSegment } from "../../models/transcript";
-import { Transcriber } from "./transcribe";
+import { TranscriptSegment } from "@shared/transcript";
+import { Transcriber } from "@src/services/transcribe/transcribe";
 
 // Ensure the environment variable is accessed correctly in Vite
 const apiKey = import.meta.env.VITE_OPENAI_API_KEY;

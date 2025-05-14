@@ -14,7 +14,7 @@ import { Dropzone } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query"; // Import React Query hooks
-import { APIContext } from "../App";
+import { APIContext } from "@src/App";
 
 export function AudioUpload() {
   const transcriptApi = useContext(APIContext); // Assuming APIContext is defined in your app

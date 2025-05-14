@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { transformer } from "../src/services/transform";
-import { TranscriptSegment } from "../src/models/transcript";
+import { transformer } from "@src/services/transform";
+import { TranscriptSegment } from "@shared/transcript";
 
 // Add a timeout of 1 minute for the vitest test
 describe("Transformer", { timeout: 60 * 1000 }, () => {

@@ -2,15 +2,15 @@ import {
   splitTranscriptIntoMetaAndData,
   TranscriptSegment,
   Transcript,
-} from "../models/transcript";
-import { Exporter } from "./export";
-import { wordExport } from "./export/word_exporter";
-import { FileStore } from "./store/file_store";
-import { pbDatabase, pbFileStore } from "./store/pocketbase";
-import { TranscriptDB } from "./store/transcript_db";
-import { Transcriber } from "./transcribe/transcribe";
-import { whisperTranscriber } from "./transcribe/whisper_transcriber";
-import { transformer, Transformer } from "./transform";
+} from "@shared/transcript";
+import { Exporter } from "@src/services/export";
+import { wordExport } from "@src/services/export/word_exporter";
+import { FileStore } from "@src/services/store/file_store";
+import { pbDatabase, pbFileStore } from "@src/services/store/pocketbase";
+import { TranscriptDB } from "@src/services/store/transcript_db";
+import { Transcriber } from "@src/services/transcribe/transcribe";
+import { whisperTranscriber } from "@src/services/transcribe/whisper_transcriber";
+import { transformer, Transformer } from "@src/services/transform";
 
 export const TRANSCRIPTS_SUMMARIES_LIMIT = 15;
 const apiFactory = (

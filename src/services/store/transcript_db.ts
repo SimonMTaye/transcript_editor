@@ -3,7 +3,7 @@ import {
   TranscriptMeta,
   TranscriptSegment,
   file_type,
-} from "../../models/transcript";
+} from "@shared/transcript";
 
 /**
  * Interface representing a database for managing transcripts.

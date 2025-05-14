@@ -7,7 +7,7 @@ import {
   TranscriptData,
   TranscriptSegment,
   file_type,
-} from "../src/models/transcript";
+} from "@shared/transcript";
 
 describe("wordExport", () => {
   it("should export a transcript to a Word document and save it", async () => {

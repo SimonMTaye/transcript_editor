@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Group, Textarea, Text, Box } from "@mantine/core";
-import { TranscriptSegment } from "../models/transcript";
+import { TranscriptSegment } from "@shared/transcript";
 
 interface SegmentEditorProps {
   segment: TranscriptSegment;
