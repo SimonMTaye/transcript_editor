@@ -1,5 +1,5 @@
 import { file_type } from "@shared/transcript";
-import { FileStore } from "@src/services/store/file_store";
+import { FileStore } from "@src/services/interfaces";
 import { pb } from "."; // Assuming pb instance is exported from here
 import { RecordModel } from "pocketbase";
 

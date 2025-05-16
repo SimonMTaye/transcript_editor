@@ -3,21 +3,22 @@ import {
   TranscriptSegment,
   Transcript,
 } from "@shared/transcript";
-import { Exporter } from "@src/services/export";
-import { wordExport } from "@src/services/export/word_exporter";
-import { FileStore } from "@src/services/store/file_store";
-import { pbDatabase, pbFileStore } from "@src/services/store/pocketbase";
-import { TranscriptDB } from "@src/services/store/transcript_db";
-import { Transcriber } from "@src/services/transcribe/transcribe";
-import { whisperTranscriber } from "@src/services/transcribe/whisper_transcriber";
-import { transformer, Transformer } from "@src/services/transform";
+import { Exporter } from "@src/services/interfaces";
+import { wordExport } from "@src/services/word_exporter";
+import { FileStore } from "@src/services/interfaces";
+import { pbDatabase, pbFileStore } from "@src/services/pocketbase";
+import { TranscriptDB } from "@src/services/interfaces";
+import { Transcriber } from "@src/services/interfaces";
+// import { whisperTranscriber } from "@src/services/transcribe/whisper_transcriber";
+import { Refiner } from "@src/services/interfaces";
+import { cloudfareSDK } from "./cloudfare_sdk";
 
 export const TRANSCRIPTS_SUMMARIES_LIMIT = 15;
 const apiFactory = (
   file_store: FileStore,
   database: TranscriptDB,
   transcriber: Transcriber,
-  transformer: Transformer,
+  refiner: Refiner,
   exporter: Exporter
 ) => {
   return {
@@ -49,7 +50,7 @@ const apiFactory = (
     },
     refineTranscript: async (id: string) => {
       const transcript = await database.getTranscript(id);
-      const refinedSegments = await transformer.refine(transcript.segments);
+      const refinedSegments = await refiner.refine(transcript.segments);
       // Create a new transcript data entry in the database
       const refinedTranscript = await database.createTranscriptData(
         transcript.id,
@@ -71,7 +72,7 @@ const apiFactory = (
 export const transcriptApi = apiFactory(
   pbFileStore,
   pbDatabase,
-  whisperTranscriber,
-  transformer,
+  cloudfareSDK,
+  cloudfareSDK,
   wordExport
 );

@@ -3,7 +3,7 @@ import {
   TranscriptMeta,
   TranscriptSegment,
 } from "@shared/transcript";
-import { Exporter } from ".";
+import { Exporter } from "@src/services/interfaces";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
 function flattenSegements(segments: TranscriptSegment[]) {

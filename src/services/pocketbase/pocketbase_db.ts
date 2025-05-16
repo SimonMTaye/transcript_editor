@@ -6,7 +6,7 @@ import {
   file_type,
   joinMetaAndData,
 } from "@shared/transcript";
-import { TranscriptDB } from "@src/services/store/transcript_db";
+import { TranscriptDB } from "@src/services/interfaces";
 import { pb } from ".";
 
 const META_COLLECTION = "transcript_meta"; // Replace with your actual collection name

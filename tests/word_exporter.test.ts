@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import path from "path";
 import fs from "fs/promises";
-import { wordExport } from "../src/services/export/word_exporter";
+import { wordExport } from "@src/services/word_exporter";
 import {
   TranscriptMeta,
   TranscriptData,
