@@ -1,23 +1,10 @@
 import OpenAI from "openai";
 import { TranscriptSegment } from "@shared/transcript";
-import { Transcriber } from "@src/services/interfaces";
 
-// Ensure the environment variable is accessed correctly in Vite
-const apiKey = process.env.OPENAI_API_KEY;
-
-if (!apiKey) {
-  console.error(
-    "OpenAI API key not found. Please set the VITE_OPENAI_API_KEY environment variable."
-  );
-  // Optionally throw an error or handle this case appropriately
-}
-
-const oai = new OpenAI({
-  apiKey: apiKey,
-  dangerouslyAllowBrowser: true, // Required for client-side usage
-});
-
-export const whisperFactor = (openai: OpenAI) => {
+export const whisperFactory = (apiKey: string) => {
+  const openai = new OpenAI({
+    apiKey: apiKey,
+  });
   return {
     async transcribeAudio(file: File): Promise<TranscriptSegment[]> {
       try {
@@ -60,5 +47,3 @@ export const whisperFactor = (openai: OpenAI) => {
     },
   };
 };
-
-export const whisperTranscriber: Transcriber = await whisperFactor(oai);

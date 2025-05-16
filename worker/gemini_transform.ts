@@ -84,11 +84,4 @@ export const refineFactory = async (key: string, model: string) => {
 };
 
 // Configure here:
-const apiKey = process.env.GEMINI_API_KEY;
-const defaultModel = "gemini-2.5-flash-preview-04-17";
-
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY environment variable not set.");
-}
-
-export const refine = await refineFactory(apiKey, defaultModel);
+export const defaultModel = "gemini-2.5-flash-preview-04-17";

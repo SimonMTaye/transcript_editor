@@ -1,6 +1,8 @@
-name = "ETRM TEditor"
-compatibility_date = "2025-05-08" 
+name = "etrm-editor"
+compatibility_date = "2025-05-07" 
+main = "worker/index.ts"
+tsconfig = "tsconfig.node.json"
 
-[assets]
-bucket = "./dist" 
-not_found_handling = "single-page-application"
+[dev] 
+port = 8787 
+local_protocol = "http"

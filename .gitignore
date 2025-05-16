@@ -31,6 +31,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 .env.local
+.dev.vars
 .env.development.local
 .env.test.local
 .env.production.local
