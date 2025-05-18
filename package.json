@@ -8,6 +8,7 @@
     "dev:vite": "vite --force",
     "dev:wrangler": "wrangler dev",
     "dev": "concurrently \"npm:dev:pocketbase\" \"npm:dev:vite\" \"npm:dev:wrangler\"",
+    "dev:prod": "vite --mode production",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
