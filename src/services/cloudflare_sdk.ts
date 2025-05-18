@@ -8,7 +8,7 @@ if (!BASE_URL) {
   throw new Error("VITE_CF_ENDPOINT environment variable is not set.");
 }
 
-export const cloudfareSDK: Refiner & Transcriber = {
+export const cloudflareSDK: Refiner & Transcriber = {
   async refine(segments: TranscriptSegment[]): Promise<TranscriptSegment[]> {
     const response = await fetch(`${BASE_URL}${REFINE_ENDPOINT}`, {
       method: "POST",

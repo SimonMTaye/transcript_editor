@@ -11,7 +11,7 @@ import { TranscriptDB } from "@src/services/interfaces";
 import { Transcriber } from "@src/services/interfaces";
 // import { whisperTranscriber } from "@src/services/transcribe/whisper_transcriber";
 import { Refiner } from "@src/services/interfaces";
-import { cloudfareSDK } from "./cloudfare_sdk";
+import { cloudflareSDK } from "./cloudflare_sdk";
 
 export const TRANSCRIPTS_SUMMARIES_LIMIT = 15;
 const apiFactory = (
@@ -72,7 +72,7 @@ const apiFactory = (
 export const transcriptApi = apiFactory(
   pbFileStore,
   pbDatabase,
-  cloudfareSDK,
-  cloudfareSDK,
+  cloudflareSDK,
+  cloudflareSDK,
   wordExport
 );

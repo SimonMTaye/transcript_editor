@@ -12,7 +12,7 @@ const FILE_COLLECTION = "file_db"; // Replace with your actual collection name
 
 export const pbFileStore: FileStore = {
   /**
-   * Uploads an audio file to the PocketBase 'audio_files' collection.
+   * Uploads a (audio only for now) file to the PocketBase 'file' collection.
    * @param file The audio file to upload.
    * @returns A promise resolving to the identifier of the uploaded file.
    */
