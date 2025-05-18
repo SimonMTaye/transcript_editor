@@ -1,8 +1,8 @@
-import { ReactNode } from 'react';
-import { AppShell, Burger, Group, Title, UnstyledButton } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { useNavigate } from 'react-router-dom';
-import { RecentTranscripts } from './RecentTranscripts';
+import { ReactNode } from "react";
+import { AppShell, Burger, Group, Title, UnstyledButton } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { useNavigate } from "react-router-dom";
+import { RecentTranscripts } from "@src/components/RecentTranscripts";
 
 interface LayoutProps {
   children: ReactNode;
@@ -17,28 +17,28 @@ export function Layout({ children }: LayoutProps) {
       header={{ height: 60 }}
       navbar={{
         width: 300,
-        breakpoint: 'lg',
+        breakpoint: "lg",
         collapsed: { mobile: !opened },
       }}
-      footer={{height: 0}}
+      footer={{ height: 0 }}
     >
       <AppShell.Header>
         <Group h="100%" px="lg">
           <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-          <UnstyledButton onClick={() => navigate('/')}>
+          <UnstyledButton onClick={() => navigate("/")}>
             <Title order={3}>Transcript Editor</Title>
           </UnstyledButton>
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar p="md">
-        <Title order={4} mb="md">Recent Transcripts</Title>
+        <Title order={4} mb="md">
+          Recent Transcripts
+        </Title>
         <RecentTranscripts />
       </AppShell.Navbar>
 
-      <AppShell.Main  >
-        {children}
-      </AppShell.Main>
+      <AppShell.Main>{children}</AppShell.Main>
     </AppShell>
   );
 }

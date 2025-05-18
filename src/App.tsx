@@ -3,10 +3,10 @@ import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import { Layout } from "./components/Layout";
-import { HomePage } from "./pages/HomePage";
-import { TranscriptEditPage } from "./pages/TranscriptEditPage";
-import { transcriptApi } from "./services/api";
+import { Layout } from "@src/components/Layout";
+import { HomePage } from "@src/pages/HomePage";
+import { TranscriptEditPage } from "@src/pages/TranscriptEditPage";
+import { transcriptApi } from "@src/services/api";
 import { createContext } from "react";
 
 export const APIContext = createContext(transcriptApi);

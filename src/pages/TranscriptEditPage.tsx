@@ -12,16 +12,16 @@ import {
   Box,
   Text,
 } from "@mantine/core";
-import { AudioPlayer, AudioPlayerRef } from "../components/AudioPlayer";
-import { SegmentEditor } from "../components/SegmentEditor";
-import { Transcript } from "../models/transcript";
-import { APIContext } from "../App";
+import { AudioPlayer, AudioPlayerRef } from "@src/components/AudioPlayer";
+import { SegmentEditor } from "@src/components/SegmentEditor";
+import { Transcript } from "@shared/transcript";
+import { APIContext } from "@src/App";
 import {
   IconAutomation,
   IconDeviceFloppy,
   IconFileWord,
 } from "@tabler/icons-react";
-import { countWords } from "../utils/word_count";
+import { countWords } from "@src/utils/word_count";
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);

@@ -1,0 +1,8 @@
+name = "etrm-editor"
+compatibility_date = "2025-05-07" 
+main = "worker/index.ts"
+tsconfig = "tsconfig.node.json"
+
+[dev] 
+port = 8787 
+local_protocol = "http"

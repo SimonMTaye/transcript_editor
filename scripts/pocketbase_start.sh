@@ -8,7 +8,7 @@ fi
 
 # Start the container if it's not running
 podman run -d --rm \
-  -p 8080:8080 \
+  -p 8090:8080 \
   -v ./pb_data:/pb/pb_data:Z \
   --name pocketbase \
   pocketbase

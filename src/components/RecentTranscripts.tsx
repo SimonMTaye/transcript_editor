@@ -9,11 +9,11 @@ import {
   Stack,
 } from "@mantine/core";
 import { Link } from "react-router-dom";
-import { TranscriptMeta } from "../models/transcript";
-import { APIContext } from "../App";
+import { TranscriptMeta } from "@shared/transcript";
+import { APIContext } from "@src/App";
 import { useContext, useState } from "react";
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
-import { TRANSCRIPTS_SUMMARIES_LIMIT } from "../services/api";
+import { TRANSCRIPTS_SUMMARIES_LIMIT } from "@src/services/api";
 
 export function RecentTranscripts() {
   const transcriptApi = useContext(APIContext);

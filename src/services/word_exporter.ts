@@ -2,8 +2,8 @@ import {
   TranscriptData,
   TranscriptMeta,
   TranscriptSegment,
-} from "../../models/transcript";
-import { Exporter } from ".";
+} from "@shared/transcript";
+import { Exporter } from "@src/services/interfaces";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
 function flattenSegements(segments: TranscriptSegment[]) {

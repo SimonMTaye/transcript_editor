@@ -1,9 +1,31 @@
 import {
-  Transcript,
-  TranscriptMeta,
-  TranscriptSegment,
   file_type,
-} from "../../models/transcript";
+  TranscriptSegment,
+  TranscriptMeta,
+  TranscriptData,
+  Transcript,
+} from "@shared/transcript";
+
+export interface FileStore {
+  uploadFile: (
+    file: File,
+    type: file_type
+  ) => Promise<{ file_id: string; file_url: string }>;
+  getFile: (id: string) => Promise<File>;
+  getFileURL: (id: string) => Promise<string>; // Changed return type to Promise<string>
+}
+
+export interface Refiner {
+  refine: (segments: TranscriptSegment[]) => Promise<TranscriptSegment[]>;
+}
+
+export interface Exporter {
+  exportTranscript(meta: TranscriptMeta, data: TranscriptData): Promise<Blob>;
+}
+
+export interface Transcriber {
+  transcribeAudio(file: File): Promise<TranscriptSegment[]>;
+}
 
 /**
  * Interface representing a database for managing transcripts.
