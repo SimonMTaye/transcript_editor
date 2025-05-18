@@ -3,6 +3,7 @@ import { Refiner, Transcriber } from "@src/services/interfaces";
 import { REFINE_ENDPOINT, TRANSCRIBE_ENDPOINT } from "@shared/endpoints";
 
 const BASE_URL = import.meta.env.VITE_CF_ENDPOINT;
+console.log("Cloudflare SDK URL:", BASE_URL);
 
 if (!BASE_URL) {
   throw new Error("VITE_CF_ENDPOINT environment variable is not set.");
