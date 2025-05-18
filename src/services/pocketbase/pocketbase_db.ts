@@ -34,7 +34,7 @@ export const pbDB: TranscriptDB = {
     const meta = await pb
       .collection(META_COLLECTION)
       .getList<TranscriptMeta>(offset, limit, {
-        filter: "deleted = false",
+        filter: "status = 'ready'",
         sort: "-updated_at", // Sort by updated_at in descending order
       });
     return meta.items;
@@ -49,7 +49,6 @@ export const pbDB: TranscriptDB = {
       .getOne<TranscriptMeta>(meta_id);
     const store_data = {
       segments: segments,
-      deleted: false,
       previous_did: metadata.data_id,
       meta_id: metadata.id,
     };
@@ -75,7 +74,7 @@ export const pbDB: TranscriptDB = {
         file_id,
         file_url,
         file_type,
-        deleted: false,
+        status: "ready",
       });
     return createdTranscript;
   },
@@ -83,18 +82,7 @@ export const pbDB: TranscriptDB = {
   async wipeTranscript(meta_id: string): Promise<void> {
     // Set delete boolean to true metadata entry whose id is meta_id
     await pb.collection(META_COLLECTION).update<TranscriptMeta>(meta_id, {
-      deleted: true,
+      status: "deleted",
     });
-    // Set delete boolean to true data entry whose meta_id matches the meta_id
-    const data = await pb
-      .collection(DATA_COLLECTION)
-      .getList<TranscriptData>(1, 50, {
-        filter: `meta_id = "${meta_id}"`,
-      });
-    for (const item of data.items) {
-      await pb.collection(DATA_COLLECTION).update<TranscriptData>(item.id, {
-        deleted: true,
-      });
-    }
   },
 };
