@@ -41,6 +41,7 @@ export interface Transcript {
   created_at: string;
   updated_at: string;
   segments: TranscriptSegment[];
+  status: "deleted" | "ready";
 }
 
 export type TranscriptData = {
@@ -74,6 +75,7 @@ export interface TranscriptMeta {
   file_url: string;
   file_type: file_type;
   data_id: string;
+  status: "deleted" | "ready";
 }
 
 /**
@@ -98,6 +100,7 @@ export function joinMetaAndData(
     created_at: data.updated_at,
     updated_at: meta.created_at,
     segments: data.segments,
+    status: meta.status,
   };
 }
 
@@ -120,6 +123,7 @@ export function splitTranscriptIntoMetaAndData(transcript: Transcript): {
       file_url: transcript.file_url,
       file_type: transcript.file_type,
       data_id: transcript.data_id,
+      status: transcript.status,
     },
     data: {
       id: transcript.data_id,
