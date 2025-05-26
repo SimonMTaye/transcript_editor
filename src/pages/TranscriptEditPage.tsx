@@ -37,7 +37,7 @@ export function TranscriptEditPage() {
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   // Segment tracking to allow scrolling to the active segment based on audio time
-  const [activeSegmentId, setActiveSegmentId] = useState<number>(0);
+  const [activeStart, setActiveSegmentStart] = useState<number>(0);
   const segmentRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
   const audioPlayerRef = useRef<AudioPlayerRef>(null);
   const [wordCount, setWordCount] = useState(0);
@@ -82,19 +82,19 @@ export function TranscriptEditPage() {
 
   // Effect to scroll to the active segment
   useEffect(() => {
-    if (activeSegmentId !== null) {
-      const node = segmentRefs.current.get(activeSegmentId);
+    if (activeStart !== null) {
+      const node = segmentRefs.current.get(activeStart);
       node?.scrollIntoView({
         behavior: "smooth",
         block: "center", // Or 'start', 'end', 'nearest'
       });
     }
-  }, [activeSegmentId]); // Run when activeSegmentId changes
+  }, [activeStart]); // Run when activeSegmentId changes
 
   // Write a function to read through the stored segment refs and get most recent data
   const getEditedSegmentData = () => {
     transcript?.segments.forEach((segment) => {
-      const ref = segmentRefs.current.get(segment.s_id);
+      const ref = segmentRefs.current.get(segment.start);
       if (ref) {
         const updatedText = ref.value;
         // Update the segment text with the new value
@@ -114,13 +114,13 @@ export function TranscriptEditPage() {
       (segment) => time >= segment.start && time < segment.end
     );
 
-    const currentActiveId = currentSegment
-      ? currentSegment.s_id
-      : activeSegmentId;
+    const currentActiveStart = currentSegment
+      ? currentSegment.start
+      : activeStart;
 
     // Update active segment ID only if it changed
-    if (currentActiveId !== activeSegmentId) {
-      setActiveSegmentId(currentActiveId);
+    if (currentActiveStart !== activeStart) {
+      setActiveSegmentStart(currentActiveStart);
     }
   };
 
@@ -138,6 +138,7 @@ export function TranscriptEditPage() {
       // Since original data was audio transcript we can assume the refinement is as well
       const refinedTranscript = await transcriptApi.refineTranscript(id);
       setTranscript(refinedTranscript);
+      window.location.reload();
       setError("");
     } catch (err) {
       console.error("Failed to refine transcript:", err);
@@ -268,10 +269,10 @@ export function TranscriptEditPage() {
           <Stack>
             {transcript.segments.map((segment) => (
               <SegmentEditor
-                key={segment.s_id}
+                key={segment.start}
                 segment={segment}
-                isActive={segment.s_id === activeSegmentId}
-                refCallback={(el) => segmentRefs.current.set(segment.s_id, el)} // Pass ref callback to store element reference
+                isActive={segment.start === activeStart}
+                refCallback={(el) => segmentRefs.current.set(segment.start, el)} // Pass ref callback to store element reference
                 onClick={handleSegmentClick} // Pass click handler to set active segment
                 // Pass ref callback to store element reference
               />

@@ -29,7 +29,7 @@ export function SegmentEditor({
   }, [ref]);
 
   return (
-    <Box onClick={() => (!isActive ? onClick(segment.start) : null)}>
+    <Box onClick={() => onClick(segment.start)}>
       <Group
         preventGrowOverflow={false}
         gap="xs"
