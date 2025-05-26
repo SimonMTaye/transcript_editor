@@ -6,3 +6,6 @@ tsconfig = "tsconfig.node.json"
 [dev] 
 port = 8787 
 local_protocol = "http"
+
+[vars]
+DEEPGRAM_API_KEY = "your_deepgram_api_key_here"
