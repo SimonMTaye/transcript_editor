@@ -10,7 +10,6 @@
  */
 
 export interface TranscriptSegment {
-  s_id: number;
   speaker?: string;
   start: number;
   end: number;

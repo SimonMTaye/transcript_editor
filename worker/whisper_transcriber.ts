@@ -25,14 +25,11 @@ export const whisperFactory = (apiKey: string) => {
         }
 
         // Map the response segments to the TranscriptSegment format
-        const segments: TranscriptSegment[] = response.segments.map(
-          (seg, index) => ({
-            s_id: seg.id !== undefined ? seg.id : index + 1, // Use API ID or generate one
-            start: seg.start,
-            end: seg.end,
-            text: seg.text.trim(),
-          })
-        );
+        const segments: TranscriptSegment[] = response.segments.map((seg) => ({
+          start: seg.start,
+          end: seg.end,
+          text: seg.text.trim(),
+        }));
 
         console.log("Mapped segments:", segments);
         return segments;

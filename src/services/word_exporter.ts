@@ -7,6 +7,7 @@ import { Exporter } from "@src/services/interfaces";
 import { Document, Packer, Paragraph, TextRun } from "docx";
 
 function flattenSegements(segments: TranscriptSegment[]) {
+  segments.sort((a, b) => a.start - b.start);
   return segments.reduce((acc, segment) => {
     // If the last segment is from the same speaker, append the text
     if (acc.length > 0 && acc[acc.length - 1].speaker === segment.speaker) {
@@ -19,7 +20,7 @@ function flattenSegements(segments: TranscriptSegment[]) {
       });
     }
     return acc;
-  }, [] as { speaker?: string; text: string }[]);
+  }, [] as { speaker: string; text: string }[]);
 }
 
 function segmentToParagraph(segment: { speaker?: string; text: string }) {
