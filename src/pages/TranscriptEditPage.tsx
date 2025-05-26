@@ -22,6 +22,7 @@ import {
   IconFileWord,
 } from "@tabler/icons-react";
 import { countWords } from "@src/utils/word_count";
+import toast from 'react-hot-toast';
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);
@@ -35,7 +36,6 @@ export function TranscriptEditPage() {
   const [loading, setLoading] = useState(true);
   const [refining, setRefining] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [saving, setSaving] = useState(false);
   // Segment tracking to allow scrolling to the active segment based on audio time
   const [activeSegmentId, setActiveSegmentId] = useState<number>(0);
   const segmentRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
@@ -175,19 +175,19 @@ export function TranscriptEditPage() {
     if (!id || !transcript) return;
 
     try {
-      setSaving(true);
       getEditedSegmentData();
       const savedTranscript = await transcriptApi.saveTranscriptEdits(
         id,
         transcript.segments
       );
       setTranscript(savedTranscript);
+      toast.success("Changes Saved");
       setError("");
     } catch (err) {
       console.error("Failed to save transcript:", err);
+      toast.error("Error saving changes");
       setError("Failed to save transcript");
     } finally {
-      setSaving(false);
     }
   };
 
@@ -231,8 +231,6 @@ export function TranscriptEditPage() {
         <Group>
           <Button
             onClick={handleSave}
-            loading={saving}
-            disabled={saving}
             leftSection={<IconDeviceFloppy size={16} />}
           >
             Save

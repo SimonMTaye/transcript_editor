@@ -8,6 +8,7 @@ import { HomePage } from "@src/pages/HomePage";
 import { TranscriptEditPage } from "@src/pages/TranscriptEditPage";
 import { transcriptApi } from "@src/services/api";
 import { createContext } from "react";
+import { Toaster } from 'react-hot-toast';
 
 export const APIContext = createContext(transcriptApi);
 function App() {
@@ -16,6 +17,7 @@ function App() {
       <BrowserRouter>
         <APIContext.Provider value={transcriptApi}>
           <Layout>
+            <Toaster position="top-center" />
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/transcript/:id" element={<TranscriptEditPage />} />
