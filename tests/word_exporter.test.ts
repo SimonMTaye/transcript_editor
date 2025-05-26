@@ -1,6 +1,4 @@
 import { describe, it, expect } from "vitest";
-import path from "path";
-import fs from "fs/promises";
 import { wordExport } from "@src/services/word_exporter";
 import {
   TranscriptMeta,
@@ -21,32 +19,29 @@ describe("wordExport", () => {
       file_url: "test-file-url",
       file_type: "audio" as file_type, // Cast to file_type
       data_id: "test-data-id",
+      status: "ready",
     };
 
     const mockSegments: TranscriptSegment[] = [
       {
-        s_id: 1,
         speaker: "ETRM",
         start: 0,
         end: 5,
         text: "Hello world, this is the first segment.",
       },
       {
-        s_id: 2,
         speaker: "ETRM",
         start: 5,
         end: 10,
-        text: "Hello world, this is the first segment.",
+        text: "Hello world, this is the second first segment.",
       },
       {
-        s_id: 3,
         speaker: "Oyebola",
         start: 10,
         end: 15,
         text: "This is the second segment from a different speaker.",
       },
       {
-        s_id: 4,
         speaker: "ETRM",
         start: 15,
         end: 20,
@@ -70,20 +65,5 @@ describe("wordExport", () => {
     expect(blob.type).toBe(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
-
-    // 4. Save the blob to a file
-    const buffer = await blob.arrayBuffer();
-    const filePath = path.join(
-      __dirname,
-      "../.test_output/exported_document.docx"
-    ); // Save in the same directory as the test file
-
-    try {
-      await fs.writeFile(filePath, Buffer.from(buffer));
-      console.log(`Test Word document saved to ${filePath}`);
-    } catch (err) {
-      console.error("Failed to save test Word document:", err);
-      throw err; // Re-throw to fail the test if saving fails
-    }
   });
 });
