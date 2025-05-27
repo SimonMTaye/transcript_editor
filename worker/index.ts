@@ -2,7 +2,12 @@
 import { defaultModel, refineFactory } from "@worker/gemini_transform";
 import { TranscriptSegment } from "@shared/transcript";
 import { whisperFactory } from "@worker/whisper_transcriber";
-import { REFINE_ENDPOINT, TRANSCRIBE_ENDPOINT } from "@shared/endpoints";
+import { deepgramFactory } from "@worker/deepgram_transcriber";
+import {
+  REFINE_ENDPOINT,
+  TRANSCRIBE_ENDPOINT,
+  DEEPGRAM_TRANSCRIBE_ENDPOINT,
+} from "@shared/endpoints";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,6 +49,41 @@ export default {
             headers: corsHeaders,
           });
         }
+      } else {
+        return new Response("Method not allowed", {
+          status: 405,
+          headers: corsHeaders,
+        });
+      }
+    }
+    if (url.pathname === DEEPGRAM_TRANSCRIBE_ENDPOINT) {
+      if (request.method === "POST") {
+        const apiKey = env.DEEPGRAM_API_KEY;
+        if (!apiKey) {
+          return new Response("API key not found", {
+            status: 500,
+            headers: corsHeaders,
+          });
+        }
+        const deepgramTranscriber = deepgramFactory(apiKey);
+        const contentType =
+          request.headers.get("Content-Type") || "application/octet-stream";
+        const blob = await request.blob();
+
+        if (blob.size === 0) {
+          return new Response("File not provided or empty", {
+            status: 400,
+            headers: corsHeaders,
+          });
+        }
+        const file = new File([blob], "uploaded_audio", {
+          type: contentType,
+        });
+
+        const segments = await deepgramTranscriber.transcribeAudio(file);
+        return new Response(JSON.stringify(segments), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       } else {
         return new Response("Method not allowed", {
           status: 405,

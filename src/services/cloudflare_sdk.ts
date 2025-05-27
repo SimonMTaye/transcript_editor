@@ -1,6 +1,9 @@
 import { TranscriptSegment } from "@shared/transcript";
 import { Refiner, Transcriber } from "@src/services/interfaces";
-import { REFINE_ENDPOINT, TRANSCRIBE_ENDPOINT } from "@shared/endpoints";
+import {
+  REFINE_ENDPOINT,
+  DEEPGRAM_TRANSCRIBE_ENDPOINT,
+} from "@shared/endpoints";
 
 const BASE_URL = import.meta.env.VITE_CF_ENDPOINT;
 console.log("Cloudflare SDK URL:", BASE_URL);
@@ -30,7 +33,7 @@ export const cloudflareSDK: Refiner & Transcriber = {
   },
 
   async transcribeAudio(file: File): Promise<TranscriptSegment[]> {
-    const response = await fetch(`${BASE_URL}${TRANSCRIBE_ENDPOINT}`, {
+    const response = await fetch(`${BASE_URL}${DEEPGRAM_TRANSCRIBE_ENDPOINT}`, {
       method: "POST",
       headers: {
         "Content-Type": file.type || "application/octet-stream",
