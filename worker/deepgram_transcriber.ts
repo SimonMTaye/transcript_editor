@@ -1,7 +1,12 @@
 // Imports
 import { TranscriptSegment } from "@shared/transcript";
-import { createClient, DeepgramClient, PrerecordedTranscriptionResponse } from "@deepgram/sdk";
-import { Buffer } from 'buffer';
+import {
+  createClient,
+  DeepgramClient,
+  DeepgramResponse,
+  SyncPrerecordedResponse,
+} from "@deepgram/sdk";
+import { Buffer } from "buffer";
 
 // Define the factory function for creating a Deepgram transcriber
 export const deepgramFactory = (apiKey: string) => {
@@ -23,27 +28,26 @@ export const deepgramFactory = (apiKey: string) => {
         const buffer = Buffer.from(arrayBuffer);
 
         // Call the Deepgram API to transcribe the audio
-        const response: PrerecordedTranscriptionResponse = await client.listen.prerecorded.transcribeFile(
-          buffer,
-          {
+        const response: DeepgramResponse<SyncPrerecordedResponse> =
+          await client.listen.prerecorded.transcribeFile(buffer, {
             model: "nova-2",
             smart_format: true,
             diarize: true,
             utterances: true,
-          }
-        );
+          });
 
         // Process the Deepgram API response
         // The response structure for diarized results with utterances is nested.
         // We need to iterate through response.results.utterances.
-        const segments: TranscriptSegment[] = response.results?.utterances?.map(utterance => {
-          return {
-            start: utterance.start, // in seconds
-            end: utterance.end, // in seconds
-            text: utterance.transcript,
-            speaker: `Speaker ${utterance.speaker}`, // e.g., "Speaker 0", "Speaker 1"
-          };
-        }) || [];
+        const segments: TranscriptSegment[] =
+          response.result?.results.utterances?.map((utterance) => {
+            return {
+              start: utterance.start, // in seconds
+              end: utterance.end, // in seconds
+              text: utterance.transcript,
+              speaker: `Speaker ${utterance.speaker}`, // e.g., "Speaker 0", "Speaker 1"
+            };
+          }) || [];
 
         return segments;
       } catch (error) {
