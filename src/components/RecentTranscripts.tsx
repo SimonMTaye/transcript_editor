@@ -56,6 +56,7 @@ export function RecentTranscripts() {
               key={transcript.id}
               to={`/transcript/${transcript.id}`}
               style={{ textDecoration: "none", color: "inherit" }}
+              data-testid={`transcript-link-${transcript.id}`}
             >
               <Group>
                 <div>
@@ -102,6 +103,7 @@ export function RecentTranscripts() {
               onClick={handlePreviousPage}
               disabled={page === 1 || isLoading} // Disable while loading new page too
               variant="light"
+              data-testid="prev-page-button"
             >
               <IconArrowLeft size={18} />
             </ActionIcon>
@@ -114,6 +116,7 @@ export function RecentTranscripts() {
                 transcripts.length < TRANSCRIPTS_SUMMARIES_LIMIT
               } // Disable if less than 10 items
               variant="light"
+              data-testid="next-page-button"
             >
               <IconArrowRight size={18} />
             </ActionIcon>
