@@ -3,6 +3,7 @@ import "@mantine/core/styles.css";
 import "@mantine/dropzone/styles.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // Import QueryClient and Provider
 import { Layout } from "@src/components/Layout";
 import { HomePage } from "@src/pages/HomePage";
 import { TranscriptEditPage } from "@src/pages/TranscriptEditPage";
@@ -10,11 +11,14 @@ import { transcriptApi } from "@src/services/api";
 import { createContext } from "react";
 import { Toaster } from 'react-hot-toast';
 
+const queryClient = new QueryClient();
+
 export const APIContext = createContext(transcriptApi);
 function App() {
   return (
     <MantineProvider>
       <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
         <APIContext.Provider value={transcriptApi}>
           <Layout>
             <Toaster position="top-center" />
@@ -25,6 +29,7 @@ function App() {
             </Routes>
           </Layout>
         </APIContext.Provider>
+      </QueryClientProvider>
       </BrowserRouter>
     </MantineProvider>
   );
