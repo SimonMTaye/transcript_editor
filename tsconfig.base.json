@@ -5,7 +5,8 @@
     "paths": {
       "@shared/*":  ["./shared/*"],
       "@worker/*": ["./worker/*"],
-      "@src/*": ["./src/*"]
+      "@src/*": ["./src/*"],
+      "@tests/*": ["./tests/*"],
     }
   }
 }

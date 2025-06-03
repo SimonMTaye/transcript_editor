@@ -12,7 +12,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "clean": "rm -rf dist && rm -rf .wrangler/deploy"
+    "clean": "rm -rf dist && rm -rf .wrangler/deploy",
+    "test": "vitest run --coverage"
   },
   "dependencies": {
     "@deepgram/sdk": "^3.13.0",
@@ -51,6 +52,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "jsdom": "^26.1.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.26.1",
     "vite": "^6.3.1",
