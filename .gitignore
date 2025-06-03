@@ -60,3 +60,4 @@ pocketbase.app
 
 # Wrangler
 .wrangler
+.aider*
