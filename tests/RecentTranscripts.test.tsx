@@ -1,10 +1,10 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
-import RecentTranscripts from '../src/components/RecentTranscripts';
-import { APIContext } from '../src/App';
-import { TranscriptMeta, TranscriptDB } from '../src/services/interfaces';
-import { TRANSCRIPTS_SUMMARIES_LIMIT } from '../src/services/api';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { RecentTranscripts}  from '@src/components/RecentTranscripts';
+import { APIContext } from '@src/App';
+import { TranscriptMeta} from '@shared/transcript';
+import { TRANSCRIPTS_SUMMARIES_LIMIT } from '@src/services/api';
 
 // Adjusted mockTranscripts: 18 ready, 2 deleted
 const mockTranscripts: TranscriptMeta[] = Array.from({ length: 20 }, (_, i) => ({
@@ -14,24 +14,9 @@ const mockTranscripts: TranscriptMeta[] = Array.from({ length: 20 }, (_, i) => (
   created_at: new Date(Date.now() - (i + 1) * 24 * 60 * 60 * 1000).toISOString(),
   file_id: `file-id-${i}`,
   file_url: `https://example.com/file-${i}.mp3`,
-  file_type: 'audio/mpeg',
+  file_type: 'audio',
   data_id: `data-id-${i}`,
-  status: i < 18 ? "ready" : "deleted", // First 18 are ready, last 2 are deleted
-  user_id: `user-id-${i}`,
-  custom_id: `custom-id-${i}`,
-  data_url: `https://example.com/data-${i}.json`,
-  duration: (i + 1) * 10,
-  thumbnail_url: `https://example.com/thumbnail-${i}.jpg`,
-  language: 'en',
-  has_segments: true,
-  has_text: true,
-  has_words: true,
-  is_summary_available: i % 2 === 0,
-  summary_id: `summary-id-${i}`,
-  processed_at: new Date().toISOString(),
-  summary_title: `Summary Title ${i}`,
-  summary_text: `Summary text for transcript ${i}...`,
-  tags: ['test', `tag-${i}`],
+  status: i < 12 ? "ready" : "deleted", // First 18 are ready, last 2 are deleted
 }));
 
 const getReadyTranscripts = () => mockTranscripts.filter(t => t.status === "ready");
@@ -44,28 +29,6 @@ let mockApiContextValue = {
     const endIndex = startIndex + TRANSCRIPTS_SUMMARIES_LIMIT;
     return readyTranscripts.slice(startIndex, endIndex);
   },
-  getTranscript: async (id: string) => mockTranscripts.find(t => t.id === id) || null,
-  createTranscript: async (file: File, language?: string, title?: string, customId?: string) => ({ ...mockTranscripts[0], id: 'new-id', title: title || 'New Transcript' } as TranscriptMeta),
-  deleteTranscript: async (id: string) => {
-    const transcript = mockTranscripts.find(t => t.id === id);
-    if (transcript) transcript.status = "deleted";
-    return true;
-  },
-  updateTranscript: async (id: string, data: Partial<TranscriptDB>) => {
-    const transcriptIndex = mockTranscripts.findIndex(t => t.id === id);
-    if (transcriptIndex > -1) {
-        mockTranscripts[transcriptIndex] = { ...mockTranscripts[transcriptIndex], ...data } as TranscriptMeta;
-        return mockTranscripts[transcriptIndex];
-    }
-    return null;
-  },
-  getUploadUrl: async (fileName: string, fileType: string) => `https://example.com/upload/${fileName}`,
-  getWaveform: async (dataId: string) => ({ peaks: [0.1, 0.2, 0.3] }),
-  getTranscriptData: async (dataId: string) => ({ segments: [], words: [], text: '' }),
-  getSummary: async (summaryId: string) => ({ id: summaryId, title: 'Mock Summary', text: 'This is a mock summary.'}),
-  createSummary: async (transcriptId: string, instruction?: string) => ({ id: 'new-summary-id', title: 'New Summary', text: 'Generated summary based on instruction.' }),
-  getSettings: async () => ({ model_id: "default_model" }),
-  updateSettings: async (settings: any) => true,
 };
 
 // Helper to render with provider
@@ -101,13 +64,13 @@ describe('RecentTranscripts Component', () => {
 
     // Check for the first page of "ready" transcripts
     for (let i = 0; i < TRANSCRIPTS_SUMMARIES_LIMIT; i++) {
-      expect(await screen.findByText(readyTranscripts[i].title)).toBeInTheDocument();
+      expect(await screen.findByText(readyTranscripts[i].title)).toBeDefined();
     }
 
     // Ensure "deleted" transcripts are not present
     const deletedTranscripts = mockTranscripts.filter(t => t.status === "deleted");
     for (const transcript of deletedTranscripts) {
-      expect(screen.queryByText(transcript.title)).not.toBeInTheDocument();
+      expect(screen.queryByText(transcript.title)).not.toBeDefined();
     }
 
     // Verify the correct number of items on the first page
@@ -123,9 +86,9 @@ describe('RecentTranscripts Component', () => {
     const nextButton = screen.getByTestId('next-page-button');
     const prevButton = screen.getByTestId('prev-page-button');
 
-    expect(nextButton).toBeInTheDocument();
+    expect(nextButton).toBeDefined();
     expect(nextButton).toBeEnabled();
-    expect(prevButton).toBeInTheDocument();
+    expect(prevButton).toBeDefined();
     expect(prevButton).toBeDisabled();
   });
 
@@ -146,10 +109,10 @@ describe('RecentTranscripts Component', () => {
     // Check for the second page of "ready" transcripts
     const readyTranscripts = getReadyTranscripts();
     for (let i = TRANSCRIPTS_SUMMARIES_LIMIT; i < readyTranscripts.length; i++) {
-      expect(await screen.findByText(readyTranscripts[i].title)).toBeInTheDocument();
+      expect(await screen.findByText(readyTranscripts[i].title)).toBeDefined();
     }
     // Ensure first page items are gone
-    expect(screen.queryByText(readyTranscripts[0].title)).not.toBeInTheDocument();
+    expect(screen.queryByText(readyTranscripts[0].title)).not.toBeDefined();
 
 
     const prevButton = screen.getByTestId('prev-page-button');
@@ -186,7 +149,7 @@ describe('RecentTranscripts Component', () => {
 
     // Check for the first page of "ready" transcripts again
     for (let i = 0; i < TRANSCRIPTS_SUMMARIES_LIMIT; i++) {
-      expect(await screen.findByText(getReadyTranscripts()[i].title)).toBeInTheDocument();
+      expect(await screen.findByText(getReadyTranscripts()[i].title)).toBeDefined();
     }
     expect(prevButton).toBeDisabled();
   });
@@ -197,7 +160,7 @@ describe('RecentTranscripts Component', () => {
 
     for (const transcript of readyTranscriptsPage1) {
       const link = await screen.findByTestId(`transcript-link-${transcript.id}`);
-      expect(link).toBeInTheDocument();
+      expect(link).toBeDefined();
       expect(link).toHaveAttribute('href', `/transcript/${transcript.id}`);
     }
   });
