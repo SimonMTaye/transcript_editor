@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { deepgramFactory } from "../worker/deepgram_transcriber";
-import { TranscriptSegment } from "../shared/transcript";
+import { deepgramFactory } from "@worker/deepgram_transcriber";
+import { TranscriptSegment } from "@shared/transcript";
 import {
   createClient,
   DeepgramResponse,
