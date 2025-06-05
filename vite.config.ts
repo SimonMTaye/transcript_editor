@@ -8,6 +8,9 @@ export default defineConfig(({ mode }) => ({
   test: {
     setupFiles: "./tests/vitest.setup.mjs",
     environment: "jsdom",
+    coverage: {
+      include: ["src/**/*.{js,ts,jsx,tsx}", "worker/**/*.{js,ts,jsx,tsx}", "shared/**/*.{js,ts,jsx,tsx}"],
+    },
   },
   resolve: {
     alias: {
