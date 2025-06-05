@@ -1,5 +1,6 @@
-import type { transcriptApi } from '@src/services/api';
-import type { Transcript, TranscriptMeta, TranscriptSegment } from '@shared/transcript';
+import { vi } from 'vitest';
+import { TRANSCRIPTS_SUMMARIES_LIMIT, type transcriptApi } from '@src/services/api';
+import { splitTranscriptIntoMetaAndData, type Transcript, type TranscriptMeta, type TranscriptSegment } from '@shared/transcript';
 
 // Define a type for TranscriptMeta, which is Transcript without segments
 
@@ -26,81 +27,85 @@ const baseDummyTranscript: Transcript = {
     status: 'deleted'
 };
 
-export const mockTranscriptApi: typeof transcriptApi = {
-  getRecentTranscripts: async (page: number = 1) => {
-    const mockMetaItems: TranscriptMeta[] = [
-      {
-          id: `meta-id-${page}-1`,
-          title: `Recent Transcript ${page}-1`,
-          created_at: dummyDate,
-          updated_at: dummyDate,
-          file_url: `https://example.com/recent_audio_${page}_1.mp3`,
-          file_id: `recent-file-id-${page}-1`,
-          file_type: 'audio',
-          data_id: '',
-          status: 'deleted'
-      },
-      {
-          id: `meta-id-${page}-2`,
-          title: `Recent Transcript ${page}-2`,
-          created_at: dummyDate,
-          updated_at: dummyDate,
-          file_url: `https://example.com/recent_audio_${page}_2.mp3`,
-          file_id: `recent-file-id-${page}-2`,
-          file_type: 'audio',
-          data_id: '',
-          status: 'deleted'
-      },
-    ];
-    return Promise.resolve(mockMetaItems);
-  },
+// Creates a mockAPI based on provided in-memory transcripts
+// Uses vite mocking funcitons for spying
+export const mockApiFactory = (transcripts: Transcript[] = []) => ({
+  getRecentTranscripts: vi.fn(async (page: number = 1) => {
+    const metas = transcripts.map<TranscriptMeta>((t) => splitTranscriptIntoMetaAndData(t).meta);
+    return metas.filter((t) => t.status === 'ready').slice((page - 1) * TRANSCRIPTS_SUMMARIES_LIMIT);
+  }),
 
-  getTranscript: async (id: string) => {
-    return Promise.resolve({
-      ...baseDummyTranscript,
-      id,
-      title: `Dummy Transcript ${id}`,
-    });
-  },
+  getTranscript: vi.fn(async (id: string) => {
+    const transcript = transcripts.find(t => t.id === id);
+    if (!transcript) {
+      throw new Error(`Transcript with ID ${id} not found`);
+    }
+    return transcript;
+  }),
 
-  uploadAudio: async (title: string, file: File) => {
-    // In a real scenario, database.createTranscriptData would return the new transcript data.
-    // We'll return a full Transcript object for simplicity.
-    return Promise.resolve({
+  uploadAudio: vi.fn(async (title: string, file: File) => {
+    const newTranscript: Transcript = {
       ...baseDummyTranscript,
-      id: 'uploaded-transcript-id', // This would typically be the ID of the transcript meta
+      id: `uploaded-${transcripts.length + 1}`,
       title,
-      segments: [
-        { ...dummyTranscriptSegment, text: `Content from uploaded file: ${file.name}` },
-      ],
-      file_url: `https://example.com/uploaded/${file.name}`, // Mock URL
-    });
-  },
+      file_url: `https://example.com/uploaded/${file.name}`,
+      status: 'ready',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    transcripts.push(newTranscript);
+    return newTranscript;
+  }),
 
-  refineTranscript: async (id: string) => {
-    // Assuming refine also returns a full Transcript object representing the refined version.
-    return Promise.resolve({
+  refineTranscript: vi.fn(async (id: string) => {
+    const transcript = transcripts.find(t => t.id === id);
+    if (!transcript) {
+      throw new Error(`Transcript with ID ${id} not found`);
+    }
+    transcript.segments = transcript.segments.map(s => ({
+      ...s,
+      text: `Refined: ${s.text}`
+    }));
+    transcript.updated_at = new Date().toISOString();
+    return transcript;
+  }),
+
+  saveTranscriptEdits: vi.fn(async (id: string, segments: TranscriptSegment[]) => {
+    const transcript = transcripts.find(t => t.id === id);
+    if (!transcript) {
+      throw new Error(`Transcript with ID ${id} not found`);
+    }
+    transcript.segments = segments;
+    transcript.updated_at = new Date().toISOString();
+    return transcript;
+  }),
+
+  exportToWord: vi.fn(async (transcript: Transcript) => {
+    const content = transcript.segments.map(s => s.text).join('\n');
+    return new Blob([content], { 
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' 
+    });
+  }),
+});
+
+// Create 20 dummy transcripts for testing, the first 4 should be "deleted" and the rest "ready"
+export const createDummyTranscripts = (count: number = 20): Transcript[] => {
+  const transcripts: Transcript[] = [];
+  for (let i = 0; i < count; i++) {
+    const isDeleted = i < 4; // First 4 transcripts are "deleted"
+    const status = isDeleted ? 'deleted' : 'ready';
+    const dummyTranscript: Transcript = {
       ...baseDummyTranscript,
-      id,
-      title: `Refined Transcript ${id}`,
-      segments: [
-        { ...dummyTranscriptSegment, text: 'This is a refined dummy segment.' },
-      ],
-    });
-  },
+      id: `dummy-${i + 1}`,
+      title: `Dummy Transcript ${i + 1}`,
+      segments: [dummyTranscriptSegment],
+      status,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    transcripts.push(dummyTranscript);
+  }
+  return transcripts;
+}
 
-  saveTranscriptEdits: async (id: string, segments: TranscriptSegment[]) => {
-    // Assuming save also returns a full Transcript object representing the saved version.
-    return Promise.resolve({
-      ...baseDummyTranscript,
-      id,
-      title: `Edited Transcript ${id}`,
-      segments, // Use the provided segments
-    });
-  },
-
-  exportToWord: async (transcript: Transcript) => {
-    const dummyContent = `Word document for ${transcript.title}\n\n${transcript.segments.map(s => s.text).join('\n')}`;
-    return Promise.resolve(new Blob([dummyContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
-  },
-};
+export const mockTranscriptApi: typeof transcriptApi = mockApiFactory(createDummyTranscripts());
