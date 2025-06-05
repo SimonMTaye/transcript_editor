@@ -1,5 +1,3 @@
-// @vitest-environment jsdom
-
 import { describe, it, expect } from "vitest";
 import { wordExport } from "@src/services/word_exporter";
 import {

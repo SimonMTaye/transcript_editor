@@ -1,13 +1,28 @@
+// @vitest-environment jsdom
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { RecentTranscripts } from "@src/components/RecentTranscripts";
+import { transcriptApi, TRANSCRIPTS_SUMMARIES_LIMIT } from "@src/services/api";
 import { mockTranscriptApi } from "./mockAPI";
-import { renderWithAPI } from "./mockRender";
-import { TRANSCRIPTS_SUMMARIES_LIMIT } from "@src/services/api";
+import { render } from "./setup";
+import { createContext } from "react";
 
-
+const APIContext = createContext(mockTranscriptApi);
 // Helper to render with provider
+const renderComponent = (mockApi: typeof transcriptApi = mockTranscriptApi) => {
+  return render(
+        <APIContext.Provider value={mockApi}>
+          <RecentTranscripts />
+        </APIContext.Provider>
+  );
+};
 
+function getReadyTranscripts() {
+  return mockTranscriptApi
+    .getRecentTranscripts()
+    .then((transcripts) => transcripts.filter((t) => t.status === "ready"));
+}
 
 describe("RecentTranscripts Component", () => {
   beforeEach(() => {
@@ -16,11 +31,15 @@ describe("RecentTranscripts Component", () => {
   });
 
   it('Test 1: Only "ready" transcripts are displayed', async () => {
-    await renderWithAPI(mockTranscriptApi, <RecentTranscripts />);
-    expect(mockTranscriptApi.getRecentTranscripts).toHaveBeenCalled();
-      
-    // Wait for the "Recent Transcripts" title to appear
-    expect(await screen.findByRole("heading", {}, {timeout: 1000})).toBeInTheDocument();
+    renderComponent();
+    const readyTranscripts = (
+      await mockTranscriptApi.getRecentTranscripts()
+    ).filter((t) => t.status === "ready");
+
+    // Check for the first page of "ready" transcripts
+    for (let i = 0; i < TRANSCRIPTS_SUMMARIES_LIMIT; i++) {
+      expect(await screen.findByText(readyTranscripts[i].title)).toBeDefined();
+    }
 
     // Ensure "deleted" transcripts are not present
     const deletedTranscripts = (
@@ -36,7 +55,7 @@ describe("RecentTranscripts Component", () => {
   });
 
   it("Test 2: Pagination visibility", async () => {
-    await renderWithAPI(mockTranscriptApi, <RecentTranscripts />);
+    renderComponent();
     // Wait for initial transcripts to load
     await screen.findByText(
       (
@@ -54,17 +73,21 @@ describe("RecentTranscripts Component", () => {
   });
 
   it("Test 3: Pagination functionality (Next Page)", async () => {
-    await renderWithAPI(mockTranscriptApi, <RecentTranscripts />);
+    const getRecentTranscriptsSpy = vi.spyOn(
+      mockTranscriptApi,
+      "getRecentTranscripts"
+    );
+    renderComponent();
 
     // Wait for initial page to load
-    const readyTranscripts = await mockTranscriptApi.getRecentTranscripts();
+    const readyTranscripts = await getReadyTranscripts();
     await screen.findByText(readyTranscripts[0].title);
 
     const nextButton = screen.getByTestId("next-page-button");
     fireEvent.click(nextButton);
 
     await waitFor(() => {
-      expect(mockTranscriptApi.getRecentTranscripts).toHaveBeenCalledWith(2);
+      expect(getRecentTranscriptsSpy).toHaveBeenCalledWith(2);
     });
 
     // Check for the second page of "ready" transcripts
@@ -90,10 +113,10 @@ describe("RecentTranscripts Component", () => {
       mockTranscriptApi,
       "getRecentTranscripts"
     );
-    await renderWithAPI(mockTranscriptApi, <RecentTranscripts />);
+    renderComponent();
 
     // Wait for initial page
-    const readyTranscripts = await mockTranscriptApi.getRecentTranscripts();
+    const readyTranscripts = await getReadyTranscripts();
     await screen.findByText(readyTranscripts[0].title);
 
     const nextButton = screen.getByTestId("next-page-button");
@@ -124,8 +147,8 @@ describe("RecentTranscripts Component", () => {
   });
 
   it("Test 5: Transcript link navigation", async () => {
-    await renderWithAPI(mockTranscriptApi, <RecentTranscripts />);
-    const readyTranscripts = await mockTranscriptApi.getRecentTranscripts();
+    renderComponent();
+    const readyTranscripts = await getReadyTranscripts();
     const readyTranscriptsPage1 = readyTranscripts.slice(
       0,
       TRANSCRIPTS_SUMMARIES_LIMIT

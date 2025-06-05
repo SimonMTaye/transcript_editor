@@ -6,9 +6,7 @@ import path from "path";
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
   test: {
-    environment: "jsdom",
-    setupFiles: "./tests/jsdom/setup.mjs",
-    include: ["./tests/jsdom/**/*.test.{tsx,ts}"],
+    setupFiles: "./tests/setup.tsx",
   },
   resolve: {
     alias: {

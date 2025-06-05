@@ -32,6 +32,9 @@ export function Layout({ children }: LayoutProps) {
       </AppShell.Header>
 
       <AppShell.Navbar p="md">
+        <Title order={4} mb="md">
+          Recent Transcripts
+        </Title>
         <RecentTranscripts />
       </AppShell.Navbar>
 

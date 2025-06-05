@@ -7,7 +7,6 @@ import {
   ActionIcon,
   Container,
   Stack,
-  Title,
 } from "@mantine/core";
 import { Link } from "react-router-dom";
 import { TranscriptMeta } from "@shared/transcript";
@@ -50,18 +49,14 @@ export function RecentTranscripts() {
 
   return (
     <Container style={{ minHeight: "100vh", padding: "0rem" }}>
-      <Title order={4} mb="md" role="heading">
-        Recent Transcripts
-      </Title>
       {transcripts && transcripts.length > 0 && (
-        <Stack gap="xs" role="list">
+        <Stack gap="xs">
           {transcripts.map((transcript) => (
             <Link
               key={transcript.id}
               to={`/transcript/${transcript.id}`}
               style={{ textDecoration: "none", color: "inherit" }}
               data-testid={`transcript-link-${transcript.id}`}
-              role="listitem"
             >
               <Group>
                 <div>
