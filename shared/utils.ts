@@ -5,3 +5,7 @@ export function countWords(segments: { text: string }[]): number {
     return total + (words[0] === "" ? 0 : words.length);
   }, 0);
 }
+
+export function max(a: number, b: number): number {
+  return a > b ? a : b;
+}
