@@ -3,7 +3,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": "node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2022",
-    "lib": ["ES2023"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
 
@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
+    "types": ["@testing-library/jest-dom"],
    
 
     /* Linting */
@@ -22,5 +23,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts", "worker", "shared"],
+  "include": ["vite.config.ts", "shared", "tests"],
 }

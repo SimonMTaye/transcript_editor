@@ -21,8 +21,8 @@ import {
   IconDeviceFloppy,
   IconFileWord,
 } from "@tabler/icons-react";
-import { countWords } from "@src/utils/word_count";
-import toast from 'react-hot-toast';
+import { countWords } from "@shared/utils";
+import toast from "react-hot-toast";
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);

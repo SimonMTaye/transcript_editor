@@ -5,6 +5,13 @@ import path from "path";
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  test: {
+    setupFiles: "./tests/vitest.setup.ts",
+    environment: "jsdom",
+    coverage: {
+      include: ["src/**/*.{js,ts,jsx,tsx}", "worker/**/*.{js,ts,jsx,tsx}", "shared/**/*.{js,ts,jsx,tsx}"],
+    },
+  },
   resolve: {
     alias: {
       "@src": path.resolve(__dirname, "./src"),

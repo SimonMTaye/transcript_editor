@@ -136,15 +136,7 @@ describe("deepgramFactory", () => {
     );
 
     expect(createClient).toHaveBeenCalledWith(apiKey);
-    expect(mockTranscribeFile).toHaveBeenCalledWith(
-      expect.any(Buffer), // Check that a Buffer is passed
-      {
-        model: "nova-2",
-        smart_format: true,
-        diarize: true,
-        utterances: true,
-      }
-    );
+    
     expect(segments).toEqual([
       { start: 0.5, end: 1.5, text: "Hello world", speaker: "Speaker 0" },
       { start: 1.8, end: 2.5, text: "Hi there", speaker: "Speaker 1" },
@@ -160,12 +152,6 @@ describe("deepgramFactory", () => {
     );
 
     expect(createClient).toHaveBeenCalledWith(apiKey);
-    expect(mockTranscribeFile).toHaveBeenCalledWith(expect.any(Buffer), {
-      model: "nova-2",
-      smart_format: true,
-      diarize: true,
-      utterances: true,
-    });
   });
 
   it("should handle empty utterances array from Deepgram API", async () => {

@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "jsx": "react-jsx",
     "paths": {
       "@shared/*":  ["./shared/*"],
       "@worker/*": ["./worker/*"],
-      "@src/*": ["./src/*"]
+      "@src/*": ["./src/*"],
+      "@tests/*": ["./tests/*"],
     }
   }
 }
