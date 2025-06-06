@@ -32,7 +32,7 @@ const baseDummyTranscript: Transcript = {
 export const mockApiFactory = (transcripts: Transcript[] = []) => ({
   getRecentTranscripts: vi.fn(async (page: number = 1) => {
     const metas = transcripts.map<TranscriptMeta>((t) => splitTranscriptIntoMetaAndData(t).meta);
-    return metas.filter((t) => t.status === 'ready').slice((page - 1) * TRANSCRIPTS_SUMMARIES_LIMIT);
+    return metas.filter((t) => t.status === 'ready').slice((page - 1) * TRANSCRIPTS_SUMMARIES_LIMIT, page * TRANSCRIPTS_SUMMARIES_LIMIT);
   }),
 
   getTranscript: vi.fn(async (id: string) => {
