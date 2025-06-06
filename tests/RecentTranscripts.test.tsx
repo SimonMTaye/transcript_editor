@@ -5,7 +5,7 @@ import { RecentTranscripts } from "@src/components/RecentTranscripts";
 import { TRANSCRIPTS_SUMMARIES_LIMIT } from "@src/services/api";
 import { createDummyTranscripts, mockApiFactory } from "./mockAPI";
 import { render } from "./mockRender";
-import { max } from "@shared/utils";
+import { min } from "@shared/utils";
 
 describe("RecentTranscripts Component", () => {
   it('Test 1: Only "ready" transcripts are displayed', async () => {
@@ -15,7 +15,7 @@ describe("RecentTranscripts Component", () => {
     const readyTranscripts = transcripts.filter((t) => t.status === "ready");
 
     // Check for the first page of "ready" transcripts
-    for (let i = 0; i < readyTranscripts.length; i++) {
+    for (let i = 0; i < TRANSCRIPTS_SUMMARIES_LIMIT; i++) {
       expect(await screen.findByText(readyTranscripts[i].title)).toBeDefined();
     }
 
@@ -30,7 +30,7 @@ describe("RecentTranscripts Component", () => {
     // Verify the correct number of items on the first page
     const transcriptLinks = await screen.findAllByTestId(/transcript-link-/);
     expect(transcriptLinks.length).toEqual(
-      max(readyTranscripts.length, TRANSCRIPTS_SUMMARIES_LIMIT)
+      min(readyTranscripts.length, TRANSCRIPTS_SUMMARIES_LIMIT)
     );
   });
 
@@ -118,7 +118,7 @@ describe("RecentTranscripts Component", () => {
     });
 
     // Check for the first page of "ready" transcripts again
-    for (let i = 0; i < readyTranscripts.length; i++) {
+    for (let i = 0; i < TRANSCRIPTS_SUMMARIES_LIMIT; i++) {
       expect(await screen.findByText(readyTranscripts[i].title)).toBeDefined();
     }
     expect(prevButton).toBeDisabled();
