@@ -44,17 +44,12 @@ Key features:
 /
 ├── src/                    # Main React application
 │   ├── components/         # Reusable UI components
-│   ├── context/           # React Context providers
-│   ├── hooks/             # Custom React hooks
 │   ├── pages/             # Route components
 │   ├── services/          # API and external service integrations
-│   ├── types/             # TypeScript type definitions
-│   └── utils/             # Utility functions
 ├── worker/                # Cloudflare Workers for AI processing
 ├── shared/                # Shared TypeScript interfaces and utilities
 │   ├── interfaces/        # Common type definitions
 │   └── utils/            # Shared utility functions
-├── pb_data/               # PocketBase database files
 ├── tests/                 # Test files
 ├── .github/               # GitHub workflows and issue templates
 └── public/                # Static assets
