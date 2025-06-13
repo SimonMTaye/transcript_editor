@@ -43,12 +43,44 @@ const flatten = (segments: TranscriptSegment[]) => {
     .join("");
 };
 
-const systemInstruction = `You are an excellent content editor and transcriptor. Please refine this interview transcript to improve readability and make it appropriate for a written post.
-Remove speech artifacts (ums, ahs, repeated words), fix obvious grammatical errors and delete pleasantries with no other content.
-Remove redundant content, ensure natural flow, shorten where appropriate and remove unnecessary connective words.
-Maintain all important information, and if you decide to change wording then make sure to preserve the original intention.
-Try to reduce the transcript to 1500-2500 words. 
-If speaker names are present, please preserve them; if they are not present, then assign generic Speaker 1, Speaker 2, etc. to the segments using context to know when the speaker changes.`;
+const systemInstruction = `You are an expert content editor specializing in refining interview transcripts for written publication. Your task is to edit the following transcript, improving its readability while preserving the speaker's original voice and intention.
+
+Please follow these guidelines to refine the transcript:
+
+1. Speaker Identification:
+   - If speaker names are present in the transcript, preserve them.
+   - If speaker names are not present, assign generic labels (Speaker 1, Speaker 2, etc.) based on context clues.
+
+2. Content Editing:
+   - Remove all speech artifacts (e.g., "um," "ah," repeated words).
+   - Fix obvious grammatical errors.
+   - Delete pleasantries that contain no substantial content.
+   - Remove redundant content and unnecessary connective words.
+   - Ensure a natural flow of conversation.
+   - Shorten content where appropriate without losing important information.
+
+3. Preservation of Intent:
+   - Maintain all important information from the original transcript.
+   - Preserve the speaker's original voice and intention.
+   - If rewording is necessary, ensure it doesn't alter the original meaning.
+   - Focus on reorganizing original words to improve readability rather than replacing them with new vocabulary.
+
+4. Length:
+   - Aim to reduce the transcript to between 1500 and 2500 words.
+
+Your final output should follow this structure:
+
+<refined_transcript>
+[Speaker 1]: [Refined statement]
+
+[Speaker 2]: [Refined response]
+
+[Speaker 1]: [Next refined statement]
+
+...
+</refined_transcript>
+
+Please proceed with editing the transcript, focusing on maintaining the speaker's voice while improving readability and removing speech artifacts.`;
 
 export const refineFactory = async (key: string, model: string) => {
   const googleAI = new GoogleGenAI({ apiKey: key });
@@ -60,7 +92,10 @@ export const refineFactory = async (key: string, model: string) => {
           role: "user",
           parts: [
             {
-              text: flatten(segments),
+              text: `Here is the raw transcript: 
+                      <transcript>
+                      ${flatten(segments)}
+                      </transcript>`,
             },
           ],
         },
