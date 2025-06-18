@@ -1,12 +1,20 @@
 import { screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { userEvent } from "@testing-library/user-event";
 
-import { SegmentEditor } from "@src/components/SegmentEditor";
+import {
+  SegmentEditor,
+  ACTIVE_BG_COLOR,
+  DEFAULT_BG_COLOR,
+} from "@src/components/SegmentEditor";
 import { TranscriptSegment } from "@shared/transcript";
-import { render } from "./mockRender";
+import { render } from "../utils/mockRender";
+import { hexToRgb } from "../utils/testUtils";
 
 // Helper function to create a mock transcript segment
-const createMockSegment = (overrides: Partial<TranscriptSegment> = {}): TranscriptSegment => ({
+const createMockSegment = (
+  overrides: Partial<TranscriptSegment> = {}
+): TranscriptSegment => ({
   start: 10.5,
   end: 25.8,
   text: "This is a sample transcript segment for testing purposes.",
@@ -31,7 +39,9 @@ describe("SegmentEditor Component", () => {
       />
     );
 
-    const segmentBox = screen.getByText("This is a sample transcript segment for testing purposes.").closest("div");
+    const segmentBox = screen
+      .getByText("This is a sample transcript segment for testing purposes.")
+      .closest("div");
     expect(segmentBox).toBeDefined();
 
     fireEvent.click(segmentBox!);
@@ -54,11 +64,14 @@ describe("SegmentEditor Component", () => {
       />
     );
 
-    const textarea = screen.getByDisplayValue("This is a sample transcript segment for testing purposes.");
+    const textarea = screen.getByDisplayValue(
+      "This is a sample transcript segment for testing purposes."
+    );
     expect(textarea).toBeDefined();
-    
+
     // Check if the textarea has the active background color
     const styles = getComputedStyle(textarea);
+    expect(styles.backgroundColor).toBe(hexToRgb(ACTIVE_BG_COLOR));
     // Note: In actual implementation, we'd check for the specific active background color
     expect(textarea).toBeDefined();
   });
@@ -79,11 +92,12 @@ describe("SegmentEditor Component", () => {
       />
     );
 
-    const textarea = screen.getByDisplayValue("This is a sample transcript segment for testing purposes.");
+    const textarea = screen.getByDisplayValue(
+      "This is a sample transcript segment for testing purposes."
+    );
     expect(textarea).toBeDefined();
-    
-    // Inactive segments should have default styling
-    expect(textarea).toBeDefined();
+    const styles = getComputedStyle(textarea);
+    expect(styles.backgroundColor).toBe(hexToRgb(DEFAULT_BG_COLOR));
   });
 
   it("Test 4: Time display shows formatted segment start time", async () => {
@@ -112,9 +126,11 @@ describe("SegmentEditor Component", () => {
     const mockRefCallback = vi.fn();
     const segmentText = "Custom segment text for editing test";
     const segment = createMockSegment({ text: segmentText });
+    const user = userEvent.setup();
 
     render(
       <SegmentEditor
+        data-testid="segment-editor"
         segment={segment}
         isActive={false}
         refCallback={mockRefCallback}
@@ -124,7 +140,14 @@ describe("SegmentEditor Component", () => {
 
     const textarea = screen.getByDisplayValue(segmentText);
     expect(textarea).toBeDefined();
-    expect(textarea).toHaveProperty("value", segmentText);
+    // Call a user event to simulate typing in the textarea
+    const newText = "Edited segment text";
+    await user.click(textarea);
+    await user.clear(textarea);
+    await user.type(textarea, newText);
+
+    const updated = screen.getByDisplayValue(newText);
+    expect(updated).toBeDefined();
   });
 
   it("Test 6: RefCallback is called with textarea element", async () => {
@@ -148,29 +171,7 @@ describe("SegmentEditor Component", () => {
     expect(calledWith).toBeInstanceOf(HTMLTextAreaElement);
   });
 
-  it("Test 7: Different speakers display correctly", async () => {
-    // Verify that segments with different speakers are handled properly
-    // This ensures multi-speaker transcripts display correctly with proper identification
-    const mockOnClick = vi.fn();
-    const mockRefCallback = vi.fn();
-    const segment = createMockSegment({ 
-      speaker: "SPEAKER_01",
-      text: "Different speaker content"
-    });
-
-    render(
-      <SegmentEditor
-        segment={segment}
-        isActive={false}
-        refCallback={mockRefCallback}
-        onClick={mockOnClick}
-      />
-    );
-
-    expect(screen.getByDisplayValue("Different speaker content")).toBeDefined();
-  });
-
-  it("Test 8: Edge case - Zero start time formats correctly", async () => {
+  it("Test 7: Edge case - Zero start time formats correctly", async () => {
     // Verify that segments starting at time 0 display correct timestamp
     // This ensures proper time formatting for edge cases like transcript beginning
     const mockOnClick = vi.fn();

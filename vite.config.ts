@@ -6,10 +6,14 @@ import path from "path";
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
   test: {
-    setupFiles: "./tests/vitest.setup.ts",
+    setupFiles: "./tests/frontend/vitest.setup.ts",
     environment: "jsdom",
     coverage: {
-      include: ["src/**/*.{js,ts,jsx,tsx}", "worker/**/*.{js,ts,jsx,tsx}", "shared/**/*.{js,ts,jsx,tsx}"],
+      include: [
+        "src/**/*.{js,ts,jsx,tsx}",
+        "worker/**/*.{js,ts,jsx,tsx}",
+        "shared/**/*.{js,ts,jsx,tsx}",
+      ],
     },
   },
   resolve: {

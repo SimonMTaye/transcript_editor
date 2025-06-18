@@ -61,7 +61,6 @@ Key features:
 
 - **Component-based architecture** with functional React components
 - **Context + TanStack Query pattern** for state management
-- **Custom hooks** for reusable logic encapsulation
 - **Interface-based design** for type safety and maintainability
 
 ### Backend Architecture
@@ -83,9 +82,8 @@ Key features:
 ### TypeScript
 
 - Use **strict TypeScript** configuration
-- Define **interfaces** for all data structures
+- Define **interfaces** for important data structures where implementation changes could have large downstream consequences. However, err on the side of simplicity when unsure
 - Prefer **interface over type** for object definitions
-- Export interfaces from shared locations
 
 ### React Components
 
@@ -103,10 +101,8 @@ Key features:
 
 ### Testing
 
-- Write tests for all components and utilities
 - Use **Vitest** for testing framework
-- Maintain **high test coverage**
-- Include integration tests for critical paths
+- Use `@testing-library/user-events` when testing front-end user and simulate real word user actions for testing
 
 ## Development Workflow
 
@@ -126,7 +122,7 @@ Key features:
 
 ### Before Committing
 
-1. Run `npm test` to verify all tests pass
+1. Run `npm run test` to verify all tests pass
 2. Run `npm run build` to ensure clean build
 3. Check for TypeScript errors
 4. Verify no secrets or sensitive data are included

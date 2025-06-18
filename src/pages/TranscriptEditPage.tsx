@@ -22,63 +22,69 @@ import {
   IconFileWord,
 } from "@tabler/icons-react";
 import { countWords } from "@shared/utils";
-import toast from "react-hot-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);
   // URL param using which we can get the transcript ID
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  // Current transcript being worked on
-  const [transcript, setTranscript] = useState<Transcript | null>(null);
-  const [error, setError] = useState("");
-  // State variables used for UI elements
-  const [loading, setLoading] = useState(true);
-  const [refining, setRefining] = useState(false);
   const [exporting, setExporting] = useState(false);
   // Segment tracking to allow scrolling to the active segment based on audio time
   const [activeStart, setActiveSegmentStart] = useState<number>(0);
   const segmentRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
   const audioPlayerRef = useRef<AudioPlayerRef>(null);
+  const queryClient = useQueryClient();
   const [wordCount, setWordCount] = useState(0);
+  const {
+    data: transcript,
+    isLoading: loading,
+    error,
+  } = useQuery<Transcript, Error>({
+    queryKey: ["transcript", id],
+    queryFn: async () => {
+      const result = await transcriptApi.getTranscript(id!);
+      setWordCount(countWords(result.segments));
+      return result;
+    },
+  });
 
-  const checkPocketBaseAutocancellation = (err: any) => {
-    if (
-      typeof err === "object" &&
-      err !== null &&
-      "isAbort" in err &&
-      err.isAbort
-    ) {
-      return true; // Ignore abort errors
-    }
-    return false;
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      if (!transcript) {
+        throw new Error("Transcript not loaded");
+      }
+      const editedSegments = getActiveText(transcript);
+
+      setWordCount(countWords(editedSegments));
+      return transcriptApi.saveTranscriptEdits(transcript.id, editedSegments);
+    },
+  });
+
+  // Return text stored in segments that user might have editted
+  const getActiveText = (transcript: Transcript) => {
+    return transcript.segments.map((segment) => {
+      const ref = segmentRefs.current.get(segment.start);
+      return ref ? { ...segment, text: ref.value } : segment;
+    });
   };
 
-  useEffect(() => {
-    const fetchTranscript = async () => {
-      if (!id) return;
-
-      try {
-        setLoading(true);
-        // INFO: We are assuming the transcript is an audio transcript
-        // But this will need to be changed or enforced through a stronger guarantee
-        const data = (await transcriptApi.getTranscript(id)) as Transcript;
-        setTranscript(data);
-        setWordCount(countWords(data.segments));
-        setError("");
-        setLoading(false);
-      } catch (err) {
-        if (checkPocketBaseAutocancellation(err)) {
-          console.warn("Fetch aborted:", err);
-          return; // Ignore abort errors
-        }
-        console.error("Failed to fetch transcript:", err);
-        setError("Failed to load transcript");
+  const refineMutation = useMutation({
+    // Define the mutation
+    mutationFn: async () => {
+      if (!transcript) {
+        throw new Error("Transcript not loaded");
       }
-    };
-    console.log("Fetching transcript with ID:", id);
-    fetchTranscript();
-  }, [id]);
+      const editedSegments = getActiveText(transcript);
+
+      setWordCount(countWords(editedSegments));
+      await transcriptApi.saveTranscriptEdits(transcript.id, editedSegments);
+      return transcriptApi.refineTranscript(transcript!.id);
+    },
+    onSuccess: (data: Transcript) => {
+      queryClient.invalidateQueries({ queryKey: ["transcript", data.id] });
+    },
+  });
 
   // Effect to scroll to the active segment
   useEffect(() => {
@@ -91,19 +97,6 @@ export function TranscriptEditPage() {
     }
   }, [activeStart]); // Run when activeSegmentId changes
 
-  // Write a function to read through the stored segment refs and get most recent data
-  const getEditedSegmentData = () => {
-    transcript?.segments.forEach((segment) => {
-      const ref = segmentRefs.current.get(segment.start);
-      if (ref) {
-        const updatedText = ref.value;
-        // Update the segment text with the new value
-        segment.text = updatedText;
-      }
-    });
-    setTranscript(transcript);
-    setWordCount(countWords(transcript!.segments));
-  };
   // Update the transcript state with the edited segments
   // Callback for AudioPlayer time updates
   const handleTimeUpdate = (time: number) => {
@@ -129,31 +122,12 @@ export function TranscriptEditPage() {
     audioPlayerRef.current.seek(time);
   };
 
-  const handleRefine = async () => {
-    if (!id) return;
-
-    try {
-      setRefining(true);
-      getEditedSegmentData();
-      // Since original data was audio transcript we can assume the refinement is as well
-      const refinedTranscript = await transcriptApi.refineTranscript(id);
-      setTranscript(refinedTranscript);
-      window.location.reload();
-      setError("");
-    } catch (err) {
-      console.error("Failed to refine transcript:", err);
-      setError("Failed to refine transcript");
-    } finally {
-      setRefining(false);
-    }
-  };
-
   const handleExport = async () => {
     if (!id || !transcript) return;
 
     try {
       setExporting(true);
-      getEditedSegmentData();
+      await saveMutation.mutate();
       const blob = await transcriptApi.exportToWord(transcript);
       // Trigger a download of the Word document
       const url = window.URL.createObjectURL(blob);
@@ -166,33 +140,12 @@ export function TranscriptEditPage() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Failed to export transcript:", err);
-      setError("Failed to export transcript");
     } finally {
       setExporting(false);
     }
   };
 
-  const handleSave = async () => {
-    if (!id || !transcript) return;
-
-    try {
-      getEditedSegmentData();
-      const savedTranscript = await transcriptApi.saveTranscriptEdits(
-        id,
-        transcript.segments
-      );
-      setTranscript(savedTranscript);
-      toast.success("Changes Saved");
-      setError("");
-    } catch (err) {
-      console.error("Failed to save transcript:", err);
-      toast.error("Error saving changes");
-      setError("Failed to save transcript");
-    } finally {
-    }
-  };
-
-  if (loading || !transcript) {
+  if (loading) {
     return (
       <Container size="lg">
         <Group justify="center" mt="xl">
@@ -202,7 +155,7 @@ export function TranscriptEditPage() {
     );
   }
 
-  if (error) {
+  if (error || !transcript) {
     return (
       <Container size="lg">
         <Alert color="red" title="Error" mt="md">
@@ -225,23 +178,29 @@ export function TranscriptEditPage() {
       <Group p="sm" justify="space-between">
         <Stack align="flex-start" gap={0} justify="flex-start" ml="xl">
           <Title order={2}>{transcript.title}</Title>
-          <Text size="sm" c="dimmed" onClick={() => getEditedSegmentData()}>
+          <Text
+            size="sm"
+            c="dimmed"
+            onClick={() => setWordCount(countWords(getActiveText(transcript)))}
+          >
             {`${wordCount} words`}
           </Text>
         </Stack>
         <Group>
           <Button
-            onClick={handleSave}
+            onClick={() => saveMutation.mutate()}
             leftSection={<IconDeviceFloppy size={16} />}
+            role="save-button"
           >
             Save
           </Button>
           <Button
             leftSection={<IconAutomation size={16} />}
-            onClick={handleRefine}
-            loading={refining}
-            disabled={refining}
+            onClick={async () => await refineMutation.mutate()}
+            loading={refineMutation.isPending || saveMutation.isPending}
+            disabled={refineMutation.isPending || saveMutation.isPending}
             variant="outline"
+            role="refine-button"
           >
             Refine
           </Button>
@@ -250,6 +209,7 @@ export function TranscriptEditPage() {
             onClick={handleExport}
             loading={exporting}
             disabled={exporting}
+            role="word-export-button"
           >
             Export
           </Button>

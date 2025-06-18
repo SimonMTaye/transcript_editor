@@ -1,20 +1,27 @@
 import { render as testingLibraryRender } from "@testing-library/react";
 import { MantineProvider } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import { APIContext } from "@src/App";
 import { mockTranscriptApi } from "./mockAPI";
 
 const queryClient = new QueryClient();
 
-export function render(ui: React.ReactNode, mockAPI = mockTranscriptApi) {
+export function render(
+  ui: React.ReactNode,
+  mockAPI = mockTranscriptApi,
+  initialEntries: string[] = ["/"]
+) {
   return testingLibraryRender(
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <MemoryRouter
+        initialEntries={initialEntries}
+        initialIndex={initialEntries.length - 1}
+      >
         <APIContext.Provider value={mockAPI}>
           <MantineProvider>{ui}</MantineProvider>
         </APIContext.Provider>
-      </BrowserRouter>
+      </MemoryRouter>
     </QueryClientProvider>
   );
 }

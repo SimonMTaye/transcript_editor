@@ -9,27 +9,31 @@ import { HomePage } from "@src/pages/HomePage";
 import { TranscriptEditPage } from "@src/pages/TranscriptEditPage";
 import { transcriptApi } from "@src/services/api";
 import { createContext } from "react";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
+import { theme } from "./theme";
 
 const queryClient = new QueryClient();
 
 export const APIContext = createContext(transcriptApi);
 function App() {
   return (
-    <MantineProvider>
+    <MantineProvider theme={theme}>
       <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <APIContext.Provider value={transcriptApi}>
-          <Layout>
-            <Toaster position="top-center" />
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/transcript/:id" element={<TranscriptEditPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Layout>
-        </APIContext.Provider>
-      </QueryClientProvider>
+        <QueryClientProvider client={queryClient}>
+          <APIContext.Provider value={transcriptApi}>
+            <Layout>
+              <Toaster position="top-center" />
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route
+                  path="/transcript/:id"
+                  element={<TranscriptEditPage />}
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Layout>
+          </APIContext.Provider>
+        </QueryClientProvider>
       </BrowserRouter>
     </MantineProvider>
   );
