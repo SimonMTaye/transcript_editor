@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { RecentTranscripts } from "@src/components/RecentTranscripts";
 import { TRANSCRIPTS_SUMMARIES_LIMIT } from "@src/services/api";
-import { createDummyTranscripts, mockApiFactory } from "./mockAPI";
-import { render } from "./mockRender";
+import { createDummyTranscripts, mockApiFactory } from "../utils/mockAPI";
+import { render } from "../utils/mockRender";
 import { min } from "@shared/utils";
 
 describe("RecentTranscripts Component", () => {
@@ -16,7 +16,7 @@ describe("RecentTranscripts Component", () => {
 
     // Check for the first page of "ready" transcripts
     for (let i = 0; i < TRANSCRIPTS_SUMMARIES_LIMIT; i++) {
-      expect(await screen.findByText(readyTranscripts[i].title)).toBeDefined();
+      expect(await screen.findByText(readyTranscripts[i].title)).toBeVisible();
     }
 
     // Ensure "deleted" transcripts are not present
@@ -41,7 +41,7 @@ describe("RecentTranscripts Component", () => {
     render(<RecentTranscripts />, mockAPI);
     const readyTranscripts = transcripts.filter((t) => t.status === "ready");
 
-    await screen.findByText(readyTranscripts[0].title);
+    expect(await screen.findByText(readyTranscripts[0].title)).toBeVisible();
 
     const nextButton = screen.getByTestId("next-page-button");
     const prevButton = screen.getByTestId("prev-page-button");
@@ -60,7 +60,7 @@ describe("RecentTranscripts Component", () => {
     // Wait for initial page to load
     const readyTranscripts = transcripts.filter((t) => t.status === "ready");
     await mockAPI.getRecentTranscripts();
-    await screen.findByText(readyTranscripts[0].title);
+    expect(await screen.findByText(readyTranscripts[0].title)).toBeVisible();
 
     const nextButton = screen.getByTestId("next-page-button");
     fireEvent.click(nextButton);

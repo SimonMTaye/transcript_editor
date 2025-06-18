@@ -9,6 +9,9 @@ interface SegmentEditorProps {
   onClick: (time: number) => void;
 }
 
+export const ACTIVE_BG_COLOR = "#e7f5ff"; // shade of blue
+export const DEFAULT_BG_COLOR = "#ffffff"; // white (using hex for easier testing)
+
 export function SegmentEditor({
   segment,
   isActive,
@@ -47,7 +50,7 @@ export function SegmentEditor({
           styles={{
             input: {
               fontFamily: "monospace",
-              backgroundColor: isActive ? "#e7f5ff" : "white",
+              backgroundColor: isActive ? ACTIVE_BG_COLOR : DEFAULT_BG_COLOR,
             },
           }}
           style={{

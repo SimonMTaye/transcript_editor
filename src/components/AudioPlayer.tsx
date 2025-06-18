@@ -27,9 +27,9 @@ export interface AudioPlayerRef {
 export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
   ({ src, onTimeUpdate }, ref) => {
     const audioRef = useRef<HTMLAudioElement>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
+    const [paused, setPaused] = useState(true);
 
     // Expose the seek function using useImperativeHandle
     useImperativeHandle(ref, () => ({
@@ -53,6 +53,9 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
       const audio = audioRef.current;
       if (!audio) return;
 
+      audio.pause();
+      setPaused(true); // Reset paused state when src changes
+
       const handleLoadedMetadata = () => {
         const newDuration = audio.duration;
         setDuration(newDuration);
@@ -62,11 +65,9 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
         setCurrentTime(time); // Update local state
         onTimeUpdate(time); // Notify parent
       };
-      const handleEnded = () => setIsPlaying(false);
 
       audio.addEventListener("loadedmetadata", handleLoadedMetadata);
       audio.addEventListener("timeupdate", handleTimeUpdate);
-      audio.addEventListener("ended", handleEnded);
 
       // Set initial duration if already loaded
       if (audio.readyState >= 1) {
@@ -77,7 +78,6 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
       return () => {
         audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
         audio.removeEventListener("timeupdate", handleTimeUpdate);
-        audio.removeEventListener("ended", handleEnded);
       };
       // Re-run if src changes, but not on other prop changes like currentTime
     }, [src]);
@@ -86,27 +86,29 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
       const audio = audioRef.current;
       if (!audio) return;
 
-      if (isPlaying) {
+      if (!paused) {
         audio.pause();
+        setPaused(true); // Update paused state
       } else {
         // Ensure audio is ready before playing
         if (audio.readyState >= 1) {
           audio
             .play()
             .catch((error) => console.error("Error playing audio:", error));
+          setPaused(false); // Update paused state
         } else {
           console.warn("Audio not ready, cannot play yet.");
           // Optionally load the audio if not already loading
           // audio.load();
         }
       }
-      setIsPlaying(!isPlaying);
     };
 
     // When user starts dragging slider
     const handleSeekStart = () => {
-      if (isPlaying && audioRef.current) {
+      if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause(); // Pause during seek for smoother experience
+        setPaused(true); // Update paused state
       }
     };
 
@@ -124,7 +126,7 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
       if (audioRef.current) {
         audioRef.current.currentTime = value;
         onTimeUpdate(value); // Notify parent of the final seeked time
-        if (isPlaying) {
+        if (audioRef.current.paused) {
           audioRef.current
             .play()
             .catch((error) => console.error("Error resuming audio:", error)); // Resume playing if it was playing
@@ -147,11 +149,16 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
         {/* Use a key derived from src to force re-render and reset state if src changes */}
         <audio ref={audioRef} src={src} preload="metadata" key={src} />
         <Group>
-          <ActionIcon onClick={togglePlayPause} size="lg" variant="default">
-            {isPlaying ? (
-              <IconPlayerPause size={18} />
+          <ActionIcon
+            onClick={togglePlayPause}
+            role="play-pause-button"
+            size="lg"
+            variant="default"
+          >
+            {paused ? (
+              <IconPlayerPlay role="play-button" size={18} />
             ) : (
-              <IconPlayerPlay size={18} />
+              <IconPlayerPause role="pause-button" size={18} />
             )}
           </ActionIcon>
           <Text size="sm" style={{ minWidth: "80px", textAlign: "center" }}>
@@ -163,8 +170,9 @@ export const AudioPlayer = forwardRef<AudioPlayerRef, AudioPlayerProps>(
             onChange={handleSeekChange} // Handle visual change during drag
             onChangeEnd={handleSeekEnd} // Finalize seek on release
             onMouseDown={handleSeekStart} // Mark as seeking on press
+            role="audio-seek-slider"
             max={duration || 0}
-            step={0.01}
+            step={5}
             label={null}
             style={{ flexGrow: 1 }}
             styles={{ thumb: { transition: "left 0s" } }}
