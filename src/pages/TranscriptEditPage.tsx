@@ -18,11 +18,13 @@ import { Transcript } from "@shared/transcript";
 import { APIContext } from "@src/App";
 import {
   IconAutomation,
-  IconDeviceFloppy,
   IconFileWord,
 } from "@tabler/icons-react";
 import { countWords } from "@shared/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+// Autosave delay in milliseconds (5 seconds)
+const AUTOSAVE_DELAY = 5000;
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);
@@ -36,6 +38,10 @@ export function TranscriptEditPage() {
   const audioPlayerRef = useRef<AudioPlayerRef>(null);
   const queryClient = useQueryClient();
   const [wordCount, setWordCount] = useState(0);
+  
+  // Autosave state management
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const {
     data: transcript,
     isLoading: loading,
@@ -59,6 +65,9 @@ export function TranscriptEditPage() {
       setWordCount(countWords(editedSegments));
       return transcriptApi.saveTranscriptEdits(transcript.id, editedSegments);
     },
+    onSuccess: () => {
+      setHasUnsavedChanges(false);
+    },
   });
 
   // Return text stored in segments that user might have editted
@@ -69,12 +78,39 @@ export function TranscriptEditPage() {
     });
   };
 
+  // Cancel any pending autosave timer
+  const cancelAutosaveTimer = () => {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+  };
+
+  // Schedule autosave with debouncing
+  const scheduleAutosave = () => {
+    cancelAutosaveTimer();
+    autosaveTimerRef.current = setTimeout(() => {
+      if (hasUnsavedChanges) {
+        saveMutation.mutate();
+      }
+    }, AUTOSAVE_DELAY);
+  };
+
+  // Trigger autosave when segments are modified
+  const handleSegmentChange = () => {
+    setHasUnsavedChanges(true);
+    scheduleAutosave();
+  };
+
   const refineMutation = useMutation({
     // Define the mutation
     mutationFn: async () => {
       if (!transcript) {
         throw new Error("Transcript not loaded");
       }
+      // Cancel autosave since we're explicitly saving
+      cancelAutosaveTimer();
+      
       const editedSegments = getActiveText(transcript);
 
       setWordCount(countWords(editedSegments));
@@ -82,6 +118,7 @@ export function TranscriptEditPage() {
       return transcriptApi.refineTranscript(transcript!.id);
     },
     onSuccess: (data: Transcript) => {
+      setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ["transcript", data.id] });
     },
   });
@@ -127,6 +164,8 @@ export function TranscriptEditPage() {
 
     try {
       setExporting(true);
+      // Cancel autosave since we're explicitly saving
+      cancelAutosaveTimer();
       await saveMutation.mutate();
       const blob = await transcriptApi.exportToWord(transcript);
       // Trigger a download of the Word document
@@ -144,6 +183,13 @@ export function TranscriptEditPage() {
       setExporting(false);
     }
   };
+
+  // Cleanup autosave timer on component unmount
+  useEffect(() => {
+    return () => {
+      cancelAutosaveTimer();
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -188,13 +234,6 @@ export function TranscriptEditPage() {
         </Stack>
         <Group>
           <Button
-            onClick={() => saveMutation.mutate()}
-            leftSection={<IconDeviceFloppy size={16} />}
-            role="save-button"
-          >
-            Save
-          </Button>
-          <Button
             leftSection={<IconAutomation size={16} />}
             onClick={async () => await refineMutation.mutate()}
             loading={refineMutation.isPending || saveMutation.isPending}
@@ -232,7 +271,7 @@ export function TranscriptEditPage() {
                 isActive={segment.start === activeStart}
                 refCallback={(el) => segmentRefs.current.set(segment.start, el)} // Pass ref callback to store element reference
                 onClick={handleSegmentClick} // Pass click handler to set active segment
-                // Pass ref callback to store element reference
+                onChange={handleSegmentChange} // Pass change handler for autosave
               />
             ))}
           </Stack>
