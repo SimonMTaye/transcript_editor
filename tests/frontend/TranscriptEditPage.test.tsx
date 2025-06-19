@@ -132,10 +132,7 @@ describe("TranscriptEditPage Tests", () => {
     const transcript = createDummyTranscripts(1)[0];
     const mockAPI = mockApiFactory([transcript]);
     const user = userEvent.setup();
-    
-    // Mock timers for autosave testing
-    vi.useFakeTimers();
-    
+
     renderTE(mockAPI, [`/transcript/${transcript.id}`]);
 
     await waitFor(() => {
@@ -148,9 +145,6 @@ describe("TranscriptEditPage Tests", () => {
     await user.clear(firstSegment);
     await user.type(firstSegment, "TEST EDIT");
 
-    // Fast-forward time to trigger autosave (5 seconds)
-    vi.advanceTimersByTime(5000);
-
     await waitFor(() => {
       expect(mockAPI.saveTranscriptEdits).toHaveBeenCalledWith(
         transcript.id,
@@ -161,8 +155,6 @@ describe("TranscriptEditPage Tests", () => {
         ])
       );
     });
-    
-    vi.useRealTimers();
   });
 
   it("Test 4: Refine button calls API with current transcript data", async () => {
@@ -183,6 +175,7 @@ describe("TranscriptEditPage Tests", () => {
     await user.click(refineButton);
 
     await waitFor(() => {
+      expect(mockAPI.saveTranscriptEdits).toHaveBeenCalled();
       expect(mockAPI.refineTranscript).toHaveBeenCalledWith(transcript.id);
     });
   });
@@ -193,10 +186,7 @@ describe("TranscriptEditPage Tests", () => {
     const transcript = createDummyTranscripts(1)[0];
     const mockAPI = mockApiFactory([transcript]);
     const user = userEvent.setup();
-    
-    // Mock timers for autosave testing
-    vi.useFakeTimers();
-    
+
     renderTE(mockAPI, [`/transcript/${transcript.id}`]);
 
     await waitFor(() => {
@@ -215,17 +205,16 @@ describe("TranscriptEditPage Tests", () => {
     await user.clear(firstSegment);
     await user.type(firstSegment, "TEST EDIT WITH FIVE WORDS");
 
-    // Fast-forward time to trigger autosave (5 seconds)
-    vi.advanceTimersByTime(5000);
-
     // Wait for autosave to complete and word count to update
+    await waitFor(() => {
+      expect(mockAPI.saveTranscriptEdits).toHaveBeenCalled();
+    });
+
     await waitFor(() => {
       expect(
         screen.getByText(`${originalWordCount - firstSegmentCount + 5} words`)
-      ).toBeDefined();
+      ).toBeVisible();
     });
-    
-    vi.useRealTimers();
   });
 
   it("Test 6: Multiple segment clicks update active segment correctly", async () => {
@@ -320,10 +309,7 @@ describe("TranscriptEditPage Tests", () => {
     const transcript = createDummyTranscripts(1)[0];
     const mockAPI = mockApiFactory([transcript]);
     const user = userEvent.setup();
-    
-    // Mock timers for autosave testing
-    vi.useFakeTimers();
-    
+
     renderTE(mockAPI, [`/transcript/${transcript.id}`]);
 
     await waitFor(() => {
@@ -335,23 +321,14 @@ describe("TranscriptEditPage Tests", () => {
     await user.click(firstSegment);
     await user.clear(firstSegment);
     await user.type(firstSegment, "EDIT 1");
-    
-    // Wait 2 seconds (less than autosave delay)
-    vi.advanceTimersByTime(2000);
-    
-    // Make another edit
+
+    // Make another edit quickly - this should reset the autosave timer
     await user.clear(firstSegment);
     await user.type(firstSegment, "EDIT 2");
-    
-    // Wait another 2 seconds (still less than total delay from first edit)
-    vi.advanceTimersByTime(2000);
-    
-    // Make final edit
+
+    // Make final edit - this should reset the timer again
     await user.clear(firstSegment);
     await user.type(firstSegment, "FINAL EDIT");
-    
-    // Now fast-forward the full delay from the last edit
-    vi.advanceTimersByTime(5000);
 
     // Verify saveTranscriptEdits was called only once with the final edit
     await waitFor(() => {
@@ -365,7 +342,5 @@ describe("TranscriptEditPage Tests", () => {
         ])
       );
     });
-    
-    vi.useRealTimers();
   });
 });

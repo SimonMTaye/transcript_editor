@@ -7,7 +7,7 @@ interface SegmentEditorProps {
   isActive: boolean;
   refCallback: (el: HTMLTextAreaElement) => void;
   onClick: (time: number) => void;
-  onChange?: () => void;
+  onChange: () => void;
 }
 
 export const ACTIVE_BG_COLOR = "#e7f5ff"; // shade of blue

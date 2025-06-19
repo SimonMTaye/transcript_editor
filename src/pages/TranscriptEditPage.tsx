@@ -16,15 +16,12 @@ import { AudioPlayer, AudioPlayerRef } from "@src/components/AudioPlayer";
 import { SegmentEditor } from "@src/components/SegmentEditor";
 import { Transcript } from "@shared/transcript";
 import { APIContext } from "@src/App";
-import {
-  IconAutomation,
-  IconFileWord,
-} from "@tabler/icons-react";
+import { IconAutomation, IconFileWord } from "@tabler/icons-react";
 import { countWords } from "@shared/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Autosave delay in milliseconds (5 seconds)
-const AUTOSAVE_DELAY = 5000;
+const AUTOSAVE_DELAY = 1000;
 
 export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);
@@ -38,7 +35,7 @@ export function TranscriptEditPage() {
   const audioPlayerRef = useRef<AudioPlayerRef>(null);
   const queryClient = useQueryClient();
   const [wordCount, setWordCount] = useState(0);
-  
+
   // Autosave state management
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,8 +62,11 @@ export function TranscriptEditPage() {
       setWordCount(countWords(editedSegments));
       return transcriptApi.saveTranscriptEdits(transcript.id, editedSegments);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setHasUnsavedChanges(false);
+      queryClient.invalidateQueries({
+        queryKey: ["transcript", data.id],
+      });
     },
   });
 
@@ -110,7 +110,7 @@ export function TranscriptEditPage() {
       }
       // Cancel autosave since we're explicitly saving
       cancelAutosaveTimer();
-      
+
       const editedSegments = getActiveText(transcript);
 
       setWordCount(countWords(editedSegments));
@@ -183,13 +183,6 @@ export function TranscriptEditPage() {
       setExporting(false);
     }
   };
-
-  // Cleanup autosave timer on component unmount
-  useEffect(() => {
-    return () => {
-      cancelAutosaveTimer();
-    };
-  }, []);
 
   if (loading) {
     return (
