@@ -7,6 +7,7 @@ interface SegmentEditorProps {
   isActive: boolean;
   refCallback: (el: HTMLTextAreaElement) => void;
   onClick: (time: number) => void;
+  onChange: () => void;
 }
 
 export const ACTIVE_BG_COLOR = "#e7f5ff"; // shade of blue
@@ -17,6 +18,7 @@ export function SegmentEditor({
   isActive,
   refCallback,
   onClick,
+  onChange,
 }: SegmentEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const formatTime = useCallback((seconds: number): string => {
@@ -47,6 +49,7 @@ export function SegmentEditor({
           defaultValue={segment.text}
           autosize
           minLength={100}
+          onChange={onChange}
           styles={{
             input: {
               fontFamily: "monospace",

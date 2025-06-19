@@ -28,6 +28,7 @@ describe("SegmentEditor Component", () => {
     // This ensures proper audio seeking when user selects a transcript segment
     const mockOnClick = vi.fn();
     const mockRefCallback = vi.fn();
+    const mockOnChange = vi.fn();
     const segment = createMockSegment({ start: 15.5 });
 
     render(
@@ -36,6 +37,7 @@ describe("SegmentEditor Component", () => {
         isActive={false}
         refCallback={mockRefCallback}
         onClick={mockOnClick}
+        onChange={mockOnChange}
       />
     );
 
@@ -53,6 +55,7 @@ describe("SegmentEditor Component", () => {
     // This provides visual feedback to users about the currently selected segment
     const mockOnClick = vi.fn();
     const mockRefCallback = vi.fn();
+    const mockOnChange = vi.fn();
     const segment = createMockSegment();
 
     render(
@@ -61,6 +64,7 @@ describe("SegmentEditor Component", () => {
         isActive={true}
         refCallback={mockRefCallback}
         onClick={mockOnClick}
+        onChange={mockOnChange}
       />
     );
 
@@ -81,6 +85,7 @@ describe("SegmentEditor Component", () => {
     // This ensures proper visual state management for non-selected segments
     const mockOnClick = vi.fn();
     const mockRefCallback = vi.fn();
+    const mockOnChange = vi.fn();
     const segment = createMockSegment();
 
     render(
@@ -89,6 +94,7 @@ describe("SegmentEditor Component", () => {
         isActive={false}
         refCallback={mockRefCallback}
         onClick={mockOnClick}
+        onChange={mockOnChange}
       />
     );
 
@@ -105,6 +111,7 @@ describe("SegmentEditor Component", () => {
     // This provides users with time reference for each transcript segment
     const mockOnClick = vi.fn();
     const mockRefCallback = vi.fn();
+    const mockOnChange = vi.fn();
     const segment = createMockSegment({ start: 125.5 }); // 2:05
 
     render(
@@ -113,6 +120,7 @@ describe("SegmentEditor Component", () => {
         isActive={false}
         refCallback={mockRefCallback}
         onClick={mockOnClick}
+        onChange={mockOnChange}
       />
     );
 
@@ -124,6 +132,7 @@ describe("SegmentEditor Component", () => {
     // This ensures users can modify transcript content as needed
     const mockOnClick = vi.fn();
     const mockRefCallback = vi.fn();
+    const mockOnChange = vi.fn();
     const segmentText = "Custom segment text for editing test";
     const segment = createMockSegment({ text: segmentText });
     const user = userEvent.setup();
@@ -135,6 +144,7 @@ describe("SegmentEditor Component", () => {
         isActive={false}
         refCallback={mockRefCallback}
         onClick={mockOnClick}
+        onChange={mockOnChange}
       />
     );
 
@@ -155,6 +165,7 @@ describe("SegmentEditor Component", () => {
     // This enables parent components to manage textarea references for data collection
     const mockOnClick = vi.fn();
     const mockRefCallback = vi.fn();
+    const mockOnChange = vi.fn();
     const segment = createMockSegment();
 
     render(
@@ -163,6 +174,7 @@ describe("SegmentEditor Component", () => {
         isActive={false}
         refCallback={mockRefCallback}
         onClick={mockOnClick}
+        onChange={mockOnChange}
       />
     );
 
@@ -176,6 +188,7 @@ describe("SegmentEditor Component", () => {
     // This ensures proper time formatting for edge cases like transcript beginning
     const mockOnClick = vi.fn();
     const mockRefCallback = vi.fn();
+    const mockOnChange = vi.fn();
     const segment = createMockSegment({ start: 0 });
 
     render(
@@ -184,6 +197,7 @@ describe("SegmentEditor Component", () => {
         isActive={false}
         refCallback={mockRefCallback}
         onClick={mockOnClick}
+        onChange={mockOnChange}
       />
     );
 
