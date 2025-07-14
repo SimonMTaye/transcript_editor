@@ -1,44 +1,40 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { OpenAI } from "openai";
 import { TranscriptSegment } from "@shared/transcript";
 
-const segmentResponseType = {
-  responseMimeType: "application/json",
-  responseSchema: {
-    type: Type.OBJECT,
-    required: ["segments"],
-    properties: {
-      segments: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          required: ["start", "end", "speaker", "text"],
-          properties: {
-            start: {
-              type: Type.NUMBER,
-            },
-            end: {
-              type: Type.NUMBER,
-            },
-            speaker: {
-              type: Type.STRING,
-            },
-            text: {
-              type: Type.STRING,
-            },
+const segmentResponseSchema = {
+  type: "object",
+  required: ["segments"],
+  properties: {
+    segments: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["start", "end", "speaker", "text"],
+        properties: {
+          start: {
+            type: "number",
+          },
+          end: {
+            type: "number",
+          },
+          speaker: {
+            type: "string",
+          },
+          text: {
+            type: "string",
           },
         },
       },
     },
   },
-};
+} as const;
 
 // Convert the segments to string [start - end ?speaker]: text \n
 const flatten = (segments: TranscriptSegment[]) => {
   return segments
     .map((segment) => {
-      return `${segment.start} - ${segment.end} ${
-        segment.speaker ? `?${segment.speaker}` : ""
-      }: ${segment.text}\n`;
+      return `${segment.start} - ${segment.end} ${segment.speaker ? `?${segment.speaker}` : ""
+        }: ${segment.text}\n`;
     })
     .join("");
 };
@@ -83,30 +79,37 @@ Your final output should follow this structure:
 Please proceed with editing the transcript, focusing on maintaining the speaker's voice while improving readability and removing speech artifacts.`;
 
 export const refineFactory = async (key: string, model: string) => {
-  const googleAI = new GoogleGenAI({ apiKey: key });
+  const openai = new OpenAI({
+    apiKey: key,
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+  });
   return async (segments: TranscriptSegment[]) => {
-    const response = await googleAI.models.generateContent({
+    const response = await openai.chat.completions.create({
       model,
-      contents: [
+      messages: [
+        {
+          role: "system",
+          content: systemInstruction,
+        },
         {
           role: "user",
-          parts: [
-            {
-              text: `Here is the raw transcript: 
+          content: `Here is the raw transcript: 
                       <transcript>
                       ${flatten(segments)}
                       </transcript>`,
-            },
-          ],
         },
       ],
-      config: {
-        systemInstruction,
-        ...segmentResponseType,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "transcript_segments",
+          schema: segmentResponseSchema,
+        },
       },
     });
+
     // Parse the response
-    const parsedResponse = JSON.parse(response.text!);
+    const parsedResponse = JSON.parse(response.choices[0].message.content!);
     return parsedResponse.segments.map((segment: any) => {
       return {
         start: segment.start,

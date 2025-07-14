@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@src": path.resolve(__dirname, "./src"),
       "@shared": path.resolve(__dirname, "./shared"),
+      "@worker": path.resolve(__dirname, "./worker"),
     },
   },
   define: {
