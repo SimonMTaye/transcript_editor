@@ -126,12 +126,13 @@ describe("TranscriptEditPage Tests", () => {
     expect(mockAudioElement.currentTime).toBe(transcript.segments[0].start);
   });
 
-  it("Test 3: Save button calls API with updated segment data", async () => {
-    // Verify that clicking save collects edited text from all segments
+  it("Test 3: Autosave calls API with updated segment data after delay", async () => {
+    // Verify that editing text triggers autosave after the delay period
     // and calls the save API with the complete updated transcript data
     const transcript = createDummyTranscripts(1)[0];
     const mockAPI = mockApiFactory([transcript]);
     const user = userEvent.setup();
+
     renderTE(mockAPI, [`/transcript/${transcript.id}`]);
 
     await waitFor(() => {
@@ -143,10 +144,6 @@ describe("TranscriptEditPage Tests", () => {
     await user.click(firstSegment);
     await user.clear(firstSegment);
     await user.type(firstSegment, "TEST EDIT");
-
-    // Click save button
-    const saveButton = screen.getByRole("save-button");
-    await user.click(saveButton);
 
     await waitFor(() => {
       expect(mockAPI.saveTranscriptEdits).toHaveBeenCalledWith(
@@ -178,16 +175,18 @@ describe("TranscriptEditPage Tests", () => {
     await user.click(refineButton);
 
     await waitFor(() => {
+      expect(mockAPI.saveTranscriptEdits).toHaveBeenCalled();
       expect(mockAPI.refineTranscript).toHaveBeenCalledWith(transcript.id);
     });
   });
 
   it("Test 5: Word count displays and updates correctly", async () => {
     // Verify that the word count displays the correct total words
-    // and updates when transcript segments are edited by users
+    // and updates when autosave triggers after segment edits
     const transcript = createDummyTranscripts(1)[0];
     const mockAPI = mockApiFactory([transcript]);
     const user = userEvent.setup();
+
     renderTE(mockAPI, [`/transcript/${transcript.id}`]);
 
     await waitFor(() => {
@@ -206,14 +205,16 @@ describe("TranscriptEditPage Tests", () => {
     await user.clear(firstSegment);
     await user.type(firstSegment, "TEST EDIT WITH FIVE WORDS");
 
-    // Click save button
-    const saveButton = screen.getByRole("save-button");
-    await user.click(saveButton);
+    // Wait for autosave to complete and word count to update
+    await waitFor(() => {
+      expect(mockAPI.saveTranscriptEdits).toHaveBeenCalled();
+    });
 
-    // Check that word count updates correctly
-    expect(
-      screen.getByText(`${originalWordCount - firstSegmentCount + 5} words`)
-    ).toBeDefined();
+    await waitFor(() => {
+      expect(
+        screen.getByText(`${originalWordCount - firstSegmentCount + 5} words`)
+      ).toBeVisible();
+    });
   });
 
   it("Test 6: Multiple segment clicks update active segment correctly", async () => {
@@ -301,8 +302,48 @@ describe("TranscriptEditPage Tests", () => {
       );
     });
   });
+  it("Test 9: Autosave debounces multiple edits correctly", async () => {
+    // Verify that multiple edits within the delay period only trigger one autosave call
+    // This ensures efficient use of API calls and prevents race conditions
+    const transcript = createDummyTranscripts(1)[0];
+    const mockAPI = mockApiFactory([transcript]);
+    const user = userEvent.setup();
 
-  it("Test 9: Clicking currently active segment does not change audio time", async () => {
+    renderTE(mockAPI, [`/transcript/${transcript.id}`]);
+
+    await waitFor(() => {
+      expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+    });
+
+    // Edit the first segment text multiple times
+    const firstSegment = screen.getByText(transcript.segments[0].text);
+    await user.click(firstSegment);
+    await user.clear(firstSegment);
+    await user.type(firstSegment, "EDIT 1");
+
+    // Make another edit quickly - this should reset the autosave timer
+    await user.clear(firstSegment);
+    await user.type(firstSegment, "EDIT 2");
+
+    // Make final edit - this should reset the timer again
+    await user.clear(firstSegment);
+    await user.type(firstSegment, "FINAL EDIT");
+
+    // Verify saveTranscriptEdits was called only once with the final edit
+    await waitFor(() => {
+      expect(mockAPI.saveTranscriptEdits).toHaveBeenCalledTimes(1);
+      expect(mockAPI.saveTranscriptEdits).toHaveBeenCalledWith(
+        transcript.id,
+        expect.arrayContaining([
+          expect.objectContaining({
+            text: "FINAL EDIT",
+          }),
+        ])
+      );
+    });
+  });
+
+  it("Test 10: Clicking currently active segment does not change audio time", async () => {
     // Verify that clicking on the currently active segment does not seek audio
     // This prevents unwanted audio jumping when users interact with the active segment
     const transcript = createDummyTranscripts(1, 3)[0];
@@ -317,7 +358,7 @@ describe("TranscriptEditPage Tests", () => {
     // Click on the first segment to make it active
     const firstSegmentBox = screen.getByText(transcript.segments[0].text);
     await user.click(firstSegmentBox);
-    
+
     // Verify audio time is at first segment start
     expect(mockAudioElement.currentTime).toBe(transcript.segments[0].start);
 
