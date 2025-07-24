@@ -156,6 +156,10 @@ export function TranscriptEditPage() {
 
   const handleSegmentClick = (time: number) => {
     if (!audioPlayerRef.current) return;
+    
+    // Don't seek if clicking on the currently active segment
+    if (time === activeStart) return;
+    
     audioPlayerRef.current.seek(time);
   };
 

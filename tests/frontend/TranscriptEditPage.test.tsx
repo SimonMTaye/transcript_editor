@@ -65,6 +65,25 @@ Object.defineProperty(window.HTMLMediaElement.prototype, "readyState", {
   },
 });
 
+// Mock document.createElement to prevent JSDOM navigation errors
+const originalCreateElement = document.createElement;
+const mockAnchorClick = vi.fn();
+
+Object.defineProperty(document, "createElement", {
+  value: function (tagName: string) {
+    if (tagName === "a") {
+      const mockAnchor = originalCreateElement.call(
+        document,
+        tagName
+      ) as HTMLAnchorElement;
+      mockAnchor.click = mockAnchorClick;
+      return mockAnchor;
+    }
+    return originalCreateElement.call(document, tagName);
+  },
+  configurable: true,
+});
+
 const renderTE = (mockAPI: typeof transcriptApi, initialEntries: string[]) => {
   return render(
     <Routes>
@@ -89,7 +108,8 @@ describe("TranscriptEditPage Tests", () => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
     });
 
-    expect(screen.getByText(transcript.title)).toBeVisible();
+    // Await first query to ensure transcript is loaded
+    expect(await screen.findByText(transcript.title)).toBeVisible();
 
     expect(screen.getByText(transcript.segments[0].text)).toBeVisible();
     expect(screen.getByText(`${wordCount} words`)).toBeVisible();
@@ -137,10 +157,11 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Edit the first segment text
-    const firstSegment = screen.getByText(transcript.segments[0].text);
+    const firstSegment = await screen.findByText(transcript.segments[0].text);
     await user.click(firstSegment);
     await user.clear(firstSegment);
     await user.type(firstSegment, "TEST EDIT");
@@ -155,7 +176,7 @@ describe("TranscriptEditPage Tests", () => {
         ])
       );
     });
-  });
+  }, 1500);
 
   it("Test 4: Refine button calls API with current transcript data", async () => {
     // Verify that clicking refine collects current transcript state
@@ -168,6 +189,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Click refine button
@@ -191,6 +213,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     const originalWordCount = countWords(transcript.segments);
@@ -215,7 +238,7 @@ describe("TranscriptEditPage Tests", () => {
         screen.getByText(`${originalWordCount - firstSegmentCount + 5} words`)
       ).toBeVisible();
     });
-  });
+  }, 1500);
 
   it("Test 6: Multiple segment clicks update active segment correctly", async () => {
     // Verify that clicking different segments properly updates the active state
@@ -231,7 +254,9 @@ describe("TranscriptEditPage Tests", () => {
 
     expect(mockAudioElement.currentTime).toBe(0);
     // Click first segment
-    const firstSegmentBox = screen.getByText(transcript.segments[0].text);
+    const firstSegmentBox = await screen.findByText(
+      transcript.segments[0].text
+    );
     await user.click(firstSegmentBox);
 
     expect(mockAudioElement.currentTime).toBe(0);
@@ -254,10 +279,11 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Simulate audio time update to third segment range
-    const audioPlayer = screen.getByRole("audio-seek-slider");
+    const audioPlayer = await screen.findByRole("audio-seek-slider");
     await user.click(audioPlayer);
     // Step size is 5 seconds so each button press seeks that much
     // Divide start time by 5 to get number of clicks
@@ -288,6 +314,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Click export button
@@ -314,6 +341,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Edit the first segment text multiple times
@@ -342,5 +370,47 @@ describe("TranscriptEditPage Tests", () => {
         ])
       );
     });
+  }, 1500);
+
+  it("Test 10: Clicking currently active segment does not change audio time", async () => {
+    // Verify that clicking on the currently active segment does not seek audio
+    // This prevents unwanted audio jumping when users interact with the active segment
+    const transcript = createDummyTranscripts(1, 3)[0];
+    const mockAPI = mockApiFactory([transcript]);
+    const user = userEvent.setup();
+    renderTE(mockAPI, [`/transcript/${transcript.id}`]);
+
+    await waitFor(() => {
+      expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
+    });
+
+    // Click on the first segment to make it active
+    const firstSegmentBox = screen.getByText(transcript.segments[0].text);
+    await user.click(firstSegmentBox);
+
+    // Verify audio time is at first segment start
+    expect(mockAudioElement.currentTime).toBe(transcript.segments[0].start);
+
+    // Simulate advancing the audio time within the first segment
+    const midSegmentTime = transcript.segments[0].start + 2; // 2 seconds into the segment
+    mockAudioElement.currentTime = midSegmentTime;
+
+    // Trigger a time update to set the active segment
+    const audioPlayer = screen.getByRole("audio-seek-slider");
+    await user.click(audioPlayer);
+
+    // Click on the currently active segment (first segment)
+    await user.click(firstSegmentBox);
+
+    // Audio time should remain unchanged (not seek back to start)
+    expect(mockAudioElement.currentTime).toBe(midSegmentTime);
+
+    // Click on a different segment to verify seeking still works
+    const secondSegmentBox = screen.getByText(transcript.segments[1].text);
+    await user.click(secondSegmentBox);
+
+    // Audio should now seek to the second segment start time
+    expect(mockAudioElement.currentTime).toBe(transcript.segments[1].start);
   });
 });
