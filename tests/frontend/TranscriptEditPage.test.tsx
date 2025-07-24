@@ -28,6 +28,25 @@ const mockAudioElement = {
   readyState: 4, // HAVE_ENOUGH_DATA
 };
 
+// Mock document.createElement to prevent JSDOM navigation errors
+const originalCreateElement = document.createElement;
+const mockAnchorClick = vi.fn();
+
+Object.defineProperty(document, "createElement", {
+  value: function (tagName: string) {
+    if (tagName === "a") {
+      const mockAnchor = originalCreateElement.call(
+        document,
+        tagName
+      ) as HTMLAnchorElement;
+      mockAnchor.click = mockAnchorClick;
+      return mockAnchor;
+    }
+    return originalCreateElement.call(document, tagName);
+  },
+  configurable: true,
+});
+
 Object.defineProperty(window.HTMLMediaElement.prototype, "play", {
   value: mockAudioElement.play,
   configurable: true,
@@ -302,6 +321,7 @@ describe("TranscriptEditPage Tests", () => {
       );
     });
   });
+
   it("Test 9: Autosave debounces multiple edits correctly", async () => {
     // Verify that multiple edits within the delay period only trigger one autosave call
     // This ensures efficient use of API calls and prevents race conditions
