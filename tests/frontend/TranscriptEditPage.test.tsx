@@ -157,6 +157,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Edit the first segment text
@@ -175,7 +176,7 @@ describe("TranscriptEditPage Tests", () => {
         ])
       );
     });
-  });
+  }, 1500);
 
   it("Test 4: Refine button calls API with current transcript data", async () => {
     // Verify that clicking refine collects current transcript state
@@ -188,10 +189,11 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Click refine button
-    const refineButton = await screen.findByRole("refine-button");
+    const refineButton = screen.getByRole("refine-button");
     await user.click(refineButton);
 
     await waitFor(() => {
@@ -236,7 +238,7 @@ describe("TranscriptEditPage Tests", () => {
         screen.getByText(`${originalWordCount - firstSegmentCount + 5} words`)
       ).toBeVisible();
     });
-  });
+  }, 1500);
 
   it("Test 6: Multiple segment clicks update active segment correctly", async () => {
     // Verify that clicking different segments properly updates the active state
@@ -368,7 +370,7 @@ describe("TranscriptEditPage Tests", () => {
         ])
       );
     });
-  });
+  }, 1500);
 
   it("Test 10: Clicking currently active segment does not change audio time", async () => {
     // Verify that clicking on the currently active segment does not seek audio
