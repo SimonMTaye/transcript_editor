@@ -108,7 +108,8 @@ describe("TranscriptEditPage Tests", () => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
     });
 
-    expect(screen.getByText(transcript.title)).toBeVisible();
+    // Await first query to ensure transcript is loaded
+    expect(await screen.findByText(transcript.title)).toBeVisible();
 
     expect(screen.getByText(transcript.segments[0].text)).toBeVisible();
     expect(screen.getByText(`${wordCount} words`)).toBeVisible();
@@ -159,7 +160,7 @@ describe("TranscriptEditPage Tests", () => {
     });
 
     // Edit the first segment text
-    const firstSegment = screen.getByText(transcript.segments[0].text);
+    const firstSegment = await screen.findByText(transcript.segments[0].text);
     await user.click(firstSegment);
     await user.clear(firstSegment);
     await user.type(firstSegment, "TEST EDIT");
@@ -190,7 +191,7 @@ describe("TranscriptEditPage Tests", () => {
     });
 
     // Click refine button
-    const refineButton = screen.getByRole("refine-button");
+    const refineButton = await screen.findByRole("refine-button");
     await user.click(refineButton);
 
     await waitFor(() => {
@@ -210,6 +211,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     const originalWordCount = countWords(transcript.segments);
@@ -250,7 +252,9 @@ describe("TranscriptEditPage Tests", () => {
 
     expect(mockAudioElement.currentTime).toBe(0);
     // Click first segment
-    const firstSegmentBox = screen.getByText(transcript.segments[0].text);
+    const firstSegmentBox = await screen.findByText(
+      transcript.segments[0].text
+    );
     await user.click(firstSegmentBox);
 
     expect(mockAudioElement.currentTime).toBe(0);
@@ -273,10 +277,11 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Simulate audio time update to third segment range
-    const audioPlayer = screen.getByRole("audio-seek-slider");
+    const audioPlayer = await screen.findByRole("audio-seek-slider");
     await user.click(audioPlayer);
     // Step size is 5 seconds so each button press seeks that much
     // Divide start time by 5 to get number of clicks
@@ -307,6 +312,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Click export button
@@ -333,6 +339,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.title);
     });
 
     // Edit the first segment text multiple times
@@ -373,7 +380,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
-      screen.getByText(transcript.segments[0].text);
+      screen.getByText(transcript.title);
     });
 
     // Click on the first segment to make it active
