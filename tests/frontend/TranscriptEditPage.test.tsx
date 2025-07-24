@@ -28,25 +28,6 @@ const mockAudioElement = {
   readyState: 4, // HAVE_ENOUGH_DATA
 };
 
-// Mock document.createElement to prevent JSDOM navigation errors
-const originalCreateElement = document.createElement;
-const mockAnchorClick = vi.fn();
-
-Object.defineProperty(document, "createElement", {
-  value: function (tagName: string) {
-    if (tagName === "a") {
-      const mockAnchor = originalCreateElement.call(
-        document,
-        tagName
-      ) as HTMLAnchorElement;
-      mockAnchor.click = mockAnchorClick;
-      return mockAnchor;
-    }
-    return originalCreateElement.call(document, tagName);
-  },
-  configurable: true,
-});
-
 Object.defineProperty(window.HTMLMediaElement.prototype, "play", {
   value: mockAudioElement.play,
   configurable: true,
@@ -82,6 +63,25 @@ Object.defineProperty(window.HTMLMediaElement.prototype, "readyState", {
   set: (value) => {
     mockAudioElement.readyState = value;
   },
+});
+
+// Mock document.createElement to prevent JSDOM navigation errors
+const originalCreateElement = document.createElement;
+const mockAnchorClick = vi.fn();
+
+Object.defineProperty(document, "createElement", {
+  value: function (tagName: string) {
+    if (tagName === "a") {
+      const mockAnchor = originalCreateElement.call(
+        document,
+        tagName
+      ) as HTMLAnchorElement;
+      mockAnchor.click = mockAnchorClick;
+      return mockAnchor;
+    }
+    return originalCreateElement.call(document, tagName);
+  },
+  configurable: true,
 });
 
 const renderTE = (mockAPI: typeof transcriptApi, initialEntries: string[]) => {
@@ -373,6 +373,7 @@ describe("TranscriptEditPage Tests", () => {
 
     await waitFor(() => {
       expect(mockAPI.getTranscript).toHaveBeenCalledWith(transcript.id);
+      screen.getByText(transcript.segments[0].text);
     });
 
     // Click on the first segment to make it active
