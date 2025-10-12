@@ -17,10 +17,26 @@ const DATA_COLLECTION = "transcript_data"; // Replace with your actual collectio
  */
 
 export const pbDB: TranscriptDB = {
-  async getTranscript(id: string): Promise<Transcript> {
-    const metadata = await pb
+  async getTranscript(id: string | undefined): Promise<Transcript> {
+    let metadata: TranscriptMeta;
+    if (!id) {
+      // Fetch the most recent transcript
+      const metaList = await pb
+        .collection(META_COLLECTION)
+        .getList<TranscriptMeta>(1, 1, {
+          filter: "status = 'ready'",
+          sort: "-updated_at", // Sort by updated_at in descending order
+        });
+      if (metaList.items.length === 0) {
+        throw new Error("No transcripts found");
+      }
+      id = metaList.items[0].id;
+      metadata = metaList.items[0];
+    } else {
+      metadata = await pb
       .collection(META_COLLECTION)
       .getOne<TranscriptMeta>(id);
+    }
     const transcriptData = await pb
       .collection(DATA_COLLECTION)
       .getOne<TranscriptData>(metadata.data_id);
@@ -28,12 +44,12 @@ export const pbDB: TranscriptDB = {
   },
 
   async getRecentTranscriptMeta(
-    limit: number,
-    offset: number
+    perPage: number,
+    page: number
   ): Promise<TranscriptMeta[]> {
     const meta = await pb
       .collection(META_COLLECTION)
-      .getList<TranscriptMeta>(offset, limit, {
+      .getList<TranscriptMeta>(page, perPage, {
         filter: "status = 'ready'",
         sort: "-updated_at", // Sort by updated_at in descending order
       });

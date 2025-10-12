@@ -50,7 +50,19 @@ export const mockApiFactory = (transcripts: Transcript[] = []) => ({
       );
   }),
 
-  getTranscript: vi.fn(async (id: string) => {
+  getTranscript: vi.fn(async (id: string | undefined) => {
+    if (!id) {
+      if (transcripts.length === 0) {
+        throw new Error("No transcripts found");
+      }
+      const recent = transcripts
+        .filter((t) => t.status === "ready")
+        .sort(
+          (a, b) =>
+            new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+      return recent[0];
+    }
     const transcript = transcripts.find((t) => t.id === id);
     if (!transcript) {
       throw new Error(`Transcript with ID ${id} not found`);

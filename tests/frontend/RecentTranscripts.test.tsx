@@ -1,7 +1,7 @@
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { RecentTranscripts } from "@src/components/RecentTranscripts";
+import { RecentTranscripts } from "@src/components/Sidebar";
 import { TRANSCRIPTS_SUMMARIES_LIMIT } from "@src/services/api";
 import { createDummyTranscripts, mockApiFactory } from "../utils/mockAPI";
 import { render } from "../utils/mockRender";

@@ -14,6 +14,7 @@ import { APIContext } from "@src/App";
 import { useContext, useState } from "react";
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import { TRANSCRIPTS_SUMMARIES_LIMIT } from "@src/services/api";
+import { AudioUpload } from "./AudioUpload";
 
 export function RecentTranscripts() {
   const transcriptApi = useContext(APIContext);
@@ -36,7 +37,13 @@ export function RecentTranscripts() {
   };
 
   if (isLoading) {
-    return <Loader size="sm" />;
+    return (
+      <Container size="md">
+        <Group justify="center" mt="xl">
+          <Loader size="md" />
+        </Group>
+      </Container>
+    );
   }
 
   if (error) {
@@ -48,7 +55,14 @@ export function RecentTranscripts() {
   }
 
   return (
-    <Container style={{ minHeight: "100vh", padding: "0rem" }}>
+    <Container
+      style={{
+        minHeight: "90vh",
+        paddingTop: "1rem",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {transcripts && transcripts.length > 0 && (
         <Stack gap="xs">
           {transcripts.map((transcript) => (
@@ -124,6 +138,9 @@ export function RecentTranscripts() {
             {/* Show small loader during page change */}
           </Group>
         )}
+      <div style={{ marginTop: "auto" }}>
+        <AudioUpload />
+      </div>
     </Container>
   );
 }

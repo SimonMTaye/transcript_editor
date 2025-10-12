@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useContext } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   Container,
   Title,
@@ -27,7 +27,6 @@ export function TranscriptEditPage() {
   const transcriptApi = useContext(APIContext);
   // URL param using which we can get the transcript ID
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const [exporting, setExporting] = useState(false);
   // Segment tracking to allow scrolling to the active segment based on audio time
   const [activeStart, setActiveSegmentStart] = useState<number>(0);
@@ -46,7 +45,7 @@ export function TranscriptEditPage() {
   } = useQuery<Transcript, Error>({
     queryKey: ["transcript", id],
     queryFn: async () => {
-      const result = await transcriptApi.getTranscript(id!);
+      const result = await transcriptApi.getTranscript(id);
       setWordCount(countWords(result.segments));
       return result;
     },
@@ -140,6 +139,9 @@ export function TranscriptEditPage() {
     if (!transcript) return;
 
     // Find the segment that contains the current time
+    // TODO: think about edge cases with overlapping segments
+    /////// Maybe we should preprocess segments to ensure no overlaps/gaps
+    // For now, just find the first segment that matches
     const currentSegment = transcript.segments.find(
       (segment) => time >= segment.start && time < segment.end
     );
@@ -156,10 +158,13 @@ export function TranscriptEditPage() {
 
   const handleSegmentClick = (time: number) => {
     if (!audioPlayerRef.current) return;
-    
+
+    // TODO: move this logic to the audio player itself
+    // Create a "SegmentClicked" listener in the audio player component
+    // that receives segment info
     // Don't seek if clicking on the currently active segment
     if (time === activeStart) return;
-    
+
     audioPlayerRef.current.seek(time);
   };
 
@@ -199,18 +204,23 @@ export function TranscriptEditPage() {
   }
 
   if (error || !transcript) {
+    // If error is that there is no trascript found, show a "Getting started message"
+    // indicate sidebar use to upload a new audio recording
+    if (error?.message.includes("No transcripts found")) {
+      return (
+        <Container size="lg">
+          <Alert color="blue" title="No Transcripts Found" mt="md">
+            It looks like you don't have any transcripts yet. To get started,
+            please upload an audio file using the upload button in the sidebar.
+          </Alert>
+        </Container>
+      );
+    }
+
     return (
       <Container size="lg">
         <Alert color="red" title="Error" mt="md">
           {`${error}\n\n`}
-          <Button
-            variant="outline"
-            color="red"
-            mt="md"
-            onClick={() => navigate("/")}
-          >
-            Go back to home
-          </Button>
         </Alert>
       </Container>
     );
