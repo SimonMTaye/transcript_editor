@@ -12,7 +12,7 @@ import {
   Box,
   Text,
 } from "@mantine/core";
-import { AudioPlayer, AudioPlayerRef } from "@src/components/AudioPlayer";
+import { AudioPlayer } from "@src/components/AudioPlayer";
 import { SegmentEditor } from "@src/components/SegmentEditor";
 import { Transcript } from "@shared/transcript";
 import { APIContext } from "@src/App";
@@ -30,8 +30,11 @@ export function TranscriptEditPage() {
   const [exporting, setExporting] = useState(false);
   // Segment tracking to allow scrolling to the active segment based on audio time
   const [activeStart, setActiveSegmentStart] = useState<number>(0);
+  // NOTE: seekTime indicates to the AudioPlayer to switch to a different time
+  // It is hooked up to a useEffect so changes to seekTime prop should be sparing and
+  // deliberate
+  const [seekTime, setSeekTime] = useState<number | undefined>(undefined);
   const segmentRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
-  const audioPlayerRef = useRef<AudioPlayerRef>(null);
   const queryClient = useQueryClient();
   const [wordCount, setWordCount] = useState(0);
 
@@ -157,15 +160,10 @@ export function TranscriptEditPage() {
   };
 
   const handleSegmentClick = (time: number) => {
-    if (!audioPlayerRef.current) return;
-
-    // TODO: move this logic to the audio player itself
-    // Create a "SegmentClicked" listener in the audio player component
-    // that receives segment info
     // Don't seek if clicking on the currently active segment
     if (time === activeStart) return;
 
-    audioPlayerRef.current.seek(time);
+    setSeekTime(time);
   };
 
   const handleExport = async () => {
@@ -288,7 +286,7 @@ export function TranscriptEditPage() {
           <AudioPlayer
             src={transcript.file_url}
             onTimeUpdate={handleTimeUpdate}
-            ref={audioPlayerRef}
+            seekTime={seekTime}
           />
         )}
       </Box>
