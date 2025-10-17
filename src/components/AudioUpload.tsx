@@ -3,10 +3,8 @@ import {
   Button,
   Group,
   Text,
-  rem,
   TextInput,
   Stack,
-  Paper,
   Modal,
   Alert,
 } from "@mantine/core";
@@ -15,13 +13,16 @@ import { useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query"; // Import React Query hooks
 import { APIContext } from "@src/App";
+import classes from "./AudioUpload.module.css";
+
+const TEXT_SIZE = "md";
 
 export function AudioUpload() {
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const transcriptApi = useContext(APIContext); // Assuming APIContext is defined in your app
   const navigate = useNavigate();
   const queryClient = useQueryClient(); // Get query client instance
   const [file, setFile] = useState<File | null>(null);
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const form = useForm({
     initialValues: {
@@ -72,46 +73,43 @@ export function AudioUpload() {
 
   return (
     <>
-      <Paper radius="md" p="xl" withBorder>
-        <Dropzone
-          onDrop={handleDrop}
-          accept={[
-            "audio/mp3",
-            "audio/mp4",
-            ".m4a",
-            "audio/mpeg",
-            "audio/wav",
-            "audio/ogg",
-          ]}
-          maxSize={30 * 1024 * 1024} // 30MB
-          disabled={uploadMutation.isPending} // Use isPending
-          style={{ minHeight: rem(180) }}
-        >
-          <Group
-            justify="center"
-            gap="xl"
-            mih={220}
-            style={{ pointerEvents: "none" }}
-          >
-            <Dropzone.Accept>
-              <Text size="xl" inline>
-                Drop the audio file here
-              </Text>
-            </Dropzone.Accept>
-            <Dropzone.Reject>
-              <Text size="xl" c="red" inline>
-                File type not supported or too large
-              </Text>
-            </Dropzone.Reject>
-            <Dropzone.Idle>
-              <Text size="xl" inline>
-                Drop audio files here or click to select
-              </Text>
-            </Dropzone.Idle>
-          </Group>
-        </Dropzone>
-      </Paper>
-
+      <Dropzone
+        onDrop={handleDrop}
+        accept={[
+          "audio/mp3",
+          "audio/mp4",
+          ".m4a",
+          "audio/mpeg",
+          "audio/wav",
+          "audio/ogg",
+        ]}
+        maxSize={30 * 1024 * 1024} // 30MB
+        disabled={uploadMutation.isPending}
+        className={classes.dropzone}
+        classNames={{
+          inner: classes.dropzoneInner,
+        }}
+        c="blue"
+        variant="light"
+      >
+        <Group align="center" justify="center" text-align="center">
+          <Dropzone.Accept>
+            <Text size={TEXT_SIZE} fw={600}>
+              Drop your audio file here!
+            </Text>
+          </Dropzone.Accept>
+          <Dropzone.Reject>
+            <Text size={TEXT_SIZE} c="red" fw={500}>
+              ❌ File type not supported or too large
+            </Text>
+          </Dropzone.Reject>
+          <Dropzone.Idle>
+            <Text size={TEXT_SIZE} fw={600}>
+              Drop your audio file here!
+            </Text>
+          </Dropzone.Idle>
+        </Group>
+      </Dropzone>
       <Modal
         opened={uploadModalOpen}
         onClose={handleCancel} // Use handleCancel for closing

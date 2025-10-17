@@ -22,17 +22,8 @@ const apiFactory = (
   exporter: Exporter
 ) => {
   return {
-    getRecentTranscripts: async (page: number = 1) => {
-      const transcripts = await database.getRecentTranscriptMeta(
-        TRANSCRIPTS_SUMMARIES_LIMIT,
-        page
-      );
-      return transcripts;
-    },
-    getTranscript: async (id: string) => {
-      const transcript = await database.getTranscript(id);
-      return transcript;
-    },
+    getRecentTranscripts: async (page: number = 1) => database.getRecentTranscriptMeta(TRANSCRIPTS_SUMMARIES_LIMIT, page),
+    getTranscript: database.getTranscript,
     uploadAudio: async (title: string, file: File) => {
       const { file_id, file_url } = await file_store.uploadFile(file, "audio");
       console.log("File uploaded successfully:", file_id, file_url);

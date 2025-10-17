@@ -1,0 +1,21 @@
+.dropzone {
+  width: 100%;
+  border-style: solid;
+  border-radius: sm;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.dropzoneInner {
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.textCenter {
+  text-align: center;
+}

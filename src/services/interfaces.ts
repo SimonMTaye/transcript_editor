@@ -32,11 +32,11 @@ export interface Transcriber {
  */
 export interface TranscriptDB {
   /**
-   * Retrieves a transcript by its unique identifier.
+   * Retrieves a transcript by its unique identifier. If no id is provided, the most recent transcript is returned.
    * @param id - The unique identifier of the transcript to retrieve.
    * @returns A promise that resolves to the requested Transcript.
    */
-  getTranscript: (id: string) => Promise<Transcript>;
+  getTranscript: (id: string | undefined) => Promise<Transcript>;
 
   /**
    * Retrieves a paginated list of recent transcript summaries.

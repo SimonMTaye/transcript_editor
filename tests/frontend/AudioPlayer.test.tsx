@@ -1,8 +1,7 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { createRef } from "react";
 
-import { AudioPlayer, AudioPlayerRef } from "@src/components/AudioPlayer";
+import { AudioPlayer } from "@src/components/AudioPlayer";
 import { render } from "../utils/mockRender";
 import userEvent from "@testing-library/user-event";
 
@@ -62,14 +61,16 @@ Object.defineProperty(window.HTMLMediaElement.prototype, "readyState", {
 });
 
 // Helper function to create AudioPlayer with required props
-const createAudioPlayer = (onTimeUpdate = vi.fn()) => {
-  const ref = createRef<AudioPlayerRef>();
+const createAudioPlayer = (onTimeUpdate = vi.fn(), seekTime?: number) => {
   return {
     component: (
-      <AudioPlayer src="test-audio.mp3" onTimeUpdate={onTimeUpdate} ref={ref} />
+      <AudioPlayer
+        src="test-audio.mp3"
+        onTimeUpdate={onTimeUpdate}
+        seekTime={seekTime}
+      />
     ),
     onTimeUpdate,
-    ref,
   };
 };
 
@@ -114,15 +115,13 @@ describe("AudioPlayer Component", () => {
     expect(onTimeUpdateSpy).toHaveBeenCalledWith(50);
   });
 
-  it("Test 3: Imperative seek method works correctly", async () => {
-    // Verify that the exposed seek method correctly updates audio currentTime
+  it("Test 3: Declarative seek prop works correctly", async () => {
+    // Verify that the seekTime prop correctly updates audio currentTime
     // and triggers onTimeUpdate callback for external seeking control
     const onTimeUpdateSpy = vi.fn();
-    const { component, ref } = createAudioPlayer(onTimeUpdateSpy);
+    const seekTime = 10;
+    const { component } = createAudioPlayer(onTimeUpdateSpy, seekTime);
     render(component);
-
-    const seekTime = 99;
-    ref.current?.seek(seekTime);
 
     expect(mockAudioElement.currentTime).toBe(seekTime);
     expect(onTimeUpdateSpy).toHaveBeenCalledWith(seekTime);
